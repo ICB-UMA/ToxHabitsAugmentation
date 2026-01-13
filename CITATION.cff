@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Gallego"
+  given-names: "Fernando"
+  orcid: "https://orcid.org/0000-0001-8053-5707"
+- family-names: "Moreno-Barea"
+  given-names: "Francisco J."
+  orcid: "https://orcid.org/0000-0002-3887-9095"
+- family-names: "Veredas"
+  given-names: "Francisco J."
+  orcid: "https://orcid.org/0000-0003-0739-2505"
+title: "..."
+version: 2.0.4
+doi: 10.12345/zenodo.12345
+date-released: 2017-12-18
+url: "https://github.com/.../ToxHabits_Augmentation"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Gallego"
+    given-names: "Fernando"
+    orcid: "https://orcid.org/0000-0001-8053-5707"
+  - family-names: "Moreno-Barea"
+    given-names: "Francisco J."
+    orcid: "https://orcid.org/0000-0002-3887-9095"
+  - family-names: "Veredas"
+    given-names: "Francisco J."
+    orcid: "https://orcid.org/0000-0003-0739-2505"
+  doi: "10.0000/00000"
+  journal: "Database"
+  month: 9
+  start: 1 # First page number
+  end: 10 # Last page number
+  title: "ToxHabits Augmentation: Data Augmentation & Benchmarking for ToxHabits NER"
+  issue: 1
+  volume: 1
+  year: 2026
