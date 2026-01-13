@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+"""
+Utilities for file handling and downloads.
+
+This module provides:
+- create_directories: ensure destination folders exist
+- get_requests_session: create a requests.Session with retry/backoff
+- download_file: robust file downloader with progress reporting and logging
+
+The functions use `requests.Session` for connection reuse and `tqdm` for progress bars.
+"""
+
+# --- Third-Party Imports ---
+from urllib3.util import Retry
+from requests.adapters import HTTPAdapter
+
+# --- Local Imports ---
+from .logging import logger
+from ..imports import (
+    tqdm,
+    shutil,
+    zipfile,
+    requests,
+    Path,
+    Union,
+    Optional,
+    CHUNK_SIZE
+)
+
+
+def cleanup_extracted_files(
+    parent_folder: Union[str, Path], 
+    target_subfolder: str = None,
+    macosx_folder: str = "__MACOSX"
+) -> None:
+    """
+    Clean up extracted files by:
+    1. Removing __MACOSX folder if it exists
+    2. Moving files from target subfolder to parent folder
+    3. Removing the target subfolder
+    
+    Args:
+        parent_folder: Path to the folder containing the extracted files
+        target_subfolder: Name of the subfolder containing the actual data
+                         (e.g., "test_good" or "train_annotations")
+                         If None, will try to auto-detect common folder names
+        macosx_folder: Name of the macOS metadata folder to remove
+    """
+    parent_folder = Path(parent_folder)
+    
+    # Auto-detect target subfolder if not specified
+    if target_subfolder is None:
+        # Look for common folder names
+        possible_folders = ["test_good", "train_annotations", "test", "train"]
+        for folder in possible_folders:
+            candidate = parent_folder / folder
+            if candidate.is_dir():
+                target_subfolder = folder
+                break
+        
+        if target_subfolder is None:
+            # If no common folder found, use the first non-__MACOSX directory
+            dirs = [d for d in parent_folder.iterdir() if d.is_dir() and d.name != macosx_folder]
+            if dirs:
+                target_subfolder = dirs[0].name
+    
+    if target_subfolder is None:
+        logger.info(f"No target subfolder found in {parent_folder}")
+        return
+    
+    # Define full path to target subfolder
+    target_path = parent_folder / target_subfolder
+    
+    logger.info(f"Cleaning up {parent_folder}: moving files from '{target_subfolder}'")
+    
+    # Remove __MACOSX folder if it exists
+    macosx_path = parent_folder / macosx_folder
+    if macosx_path.exists() and macosx_path.is_dir():
+        logger.info(f"Removing {macosx_folder} folder")
+        try:
+            shutil.rmtree(macosx_path)
+            logger.info(f"Removed {macosx_folder} folder")
+        except Exception as e:
+            logger.warning(f"Could not remove {macosx_folder} folder: {e}")
+    
+    # Move files from target subfolder to parent folder
+    if target_path.exists() and target_path.is_dir():
+        logger.info(f"Moving files from {target_path} to {parent_folder}")
+        
+        moved_count = 0
+        for item in target_path.iterdir():
+            new_path = parent_folder / item.name
+            
+            # Handle potential name conflicts
+            if new_path.exists():
+                if new_path.is_dir() and item.is_dir():
+                    # Merge directories
+                    logger.info(f"Merging directory {item.name}")
+                    for subitem in item.iterdir():
+                        shutil.move(str(subitem), str(parent_folder / subitem.name))
+                    shutil.rmtree(item)
+                else:
+                    # Skip duplicated files
+                    continue
+            else:
+                shutil.move(str(item), str(new_path))
+                moved_count += 1
+        
+        logger.info(f"Moved {moved_count} items from {target_subfolder} to parent folder")
+        
+        # Remove the now-empty target subfolder
+        try:
+            target_path.rmdir()
+            logger.info(f"Removed empty folder: {target_subfolder}")
+        except OSError:
+            # Folder might not be empty due to hidden files or permission issues
+            try:
+                shutil.rmtree(target_path)
+                logger.info(f"Removed non-empty folder: {target_subfolder}")
+            except Exception as e:
+                logger.error(f"Could not remove {target_subfolder} folder: {e}")
+    else:
+        logger.info(f"Target subfolder '{target_subfolder}' not found in {parent_folder}")
+
+
+def create_directories(
+    base_path: str
+) -> None:
+    """
+    Create directory structure if it doesn't exist and log the action.
+
+    Args:
+        base_path: Path-like string to create
+    """
+    Path(base_path).mkdir(parents=True, exist_ok=True)
+    logger.info("Created/verified directory: %s", base_path)
+
+
+def download_file(
+    url: str,
+    destination_path: str,
+    filename: str,
+    file_size: Optional[int] = None,
+    session: Optional[requests.Session] = None,
+    chunk_size: int = CHUNK_SIZE
+) -> Path:
+    """
+    Download a file to ``destination_path`` with a progress bar.
+
+    This function is resilient to transient network errors (uses a session with retries
+    by default), validates an existing file by size, and cleans up partial files on error.
+
+    Args:
+        url: URL to download from
+        destination_path: directory to save the file to
+        filename: filename to use for saving
+        file_size: expected file size in bytes (optional; helps skip re-downloads)
+        session: optional :class:`requests.Session` to use
+        chunk_size: bytes per chunk written to disk
+
+    Returns:
+        Path object pointing to the downloaded file
+
+    Raises:
+        requests.exceptions.RequestException: for network-related errors
+    """
+    session = session or get_requests_session()
+    dest = Path(destination_path)
+    dest.mkdir(parents=True, exist_ok=True)
+    file_path = dest / filename
+
+    # If file exists and matches expected size, skip download
+    if file_path.exists():
+        existing_size = file_path.stat().st_size
+        if file_size and existing_size == file_size:
+            logger.info("%s already exists with correct size (%d bytes); skipping.", filename, existing_size)
+            return file_path
+        else:
+            logger.info(
+                "%s exists but size mismatch (have=%d, expected=%s); re-downloading.",
+                filename, existing_size, str(file_size)
+            )
+            file_path.unlink()
+
+    try:
+        # If file_size not provided, try a HEAD request to discover it
+        if file_size is None:
+            try:
+                head = session.head(url, allow_redirects=True, timeout=10)
+                head.raise_for_status()
+                file_size = int(head.headers.get("content-length", 0)) or None
+            except requests.exceptions.RequestException:
+                # Not fatal — we'll rely on streaming response headers
+                logger.debug("HEAD request failed for %s; will attempt GET to determine size.", url)
+
+        # Stream the GET request and write to file in chunks
+        with session.get(url, stream=True, timeout=30) as response:
+            response.raise_for_status()
+            total_size = file_size or int(response.headers.get("content-length", 0) or 0)
+
+            with open(file_path, "wb") as fh:
+                with tqdm(total=total_size, unit="B", unit_scale=True,
+                               desc=f"Downloading {filename}") as pbar:
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        if chunk:
+                            fh.write(chunk)
+                            pbar.update(len(chunk))
+
+        logger.info("Downloaded: %s", filename)
+        return file_path
+
+    except requests.exceptions.RequestException as e:
+        logger.exception("Error downloading %s: %s", filename, e)
+        # Clean-up partial file
+        if file_path.exists():
+            try:
+                file_path.unlink()
+            except Exception:
+                logger.warning("Failed to remove partial file %s", file_path)
+        # Re-raise so callers can decide how to handle the error
+        raise
+
+
+def extract_zip_file(
+    zip_path: Union[str, Path],
+    extract_to: Union[str, Path] = None
+) -> Path:
+    """
+    Extract a zip file to the specified directory.
+    
+    Args:
+        zip_path: Path to the zip file to extract
+        extract_to: Directory to extract to (defaults to same directory as zip file)
+    
+    Returns:
+        Path to the extraction directory
+    """
+    # Ensure zip_path is a Path object
+    zip_path = Path(zip_path)
+    
+    if extract_to is None:
+        extract_to = zip_path.parent
+    else:
+        extract_to = Path(extract_to)
+    
+    # Create extraction directory if it doesn't exist
+    extract_to.mkdir(parents=True, exist_ok=True)
+    
+    logger.info(f"Extracting {zip_path.name} to {extract_to}")
+    
+    try:
+        # Extract the zip file
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_to)
+        logger.info(f"Successfully extracted {zip_path.name}")
+        return extract_to
+    except zipfile.BadZipFile:
+        logger.error(f"Error: {zip_path} is not a valid zip file")
+        raise
+    except Exception as e:
+        logger.error(f"Error extracting {zip_path}: {e}")
+        raise
+
+
+def get_requests_session(
+    retries: int = 3,
+    backoff_factor: float = 0.3,
+    status_forcelist=(500, 502, 504)
+) -> requests.Session:
+    """
+    Return a :class:`requests.Session` configured with retry/backoff.
+
+    Args:
+        retries: total number of retries for idempotent requests
+        backoff_factor: backoff multiplier between retry attempts
+        status_forcelist: HTTP status codes that should trigger a retry
+
+    Returns:
+        Configured ``requests.Session`` instance
+    """
+    session = requests.Session()
+
+    # Configure retries with backoff
+    retry = Retry(total=retries, backoff_factor=backoff_factor,
+                  status_forcelist=status_forcelist, allowed_methods=frozenset(['GET', 'HEAD']))
+    
+    # Mount the HTTPAdapter with the retry configuration
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
