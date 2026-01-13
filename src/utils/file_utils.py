@@ -31,19 +31,22 @@ from ..imports import (
 def cleanup_extracted_files(
     parent_folder: Union[str, Path], 
     target_subfolder: str = None,
+    task_2_folder: str = "train_annotations_task_2",
     macosx_folder: str = "__MACOSX"
 ) -> None:
     """
     Clean up extracted files by:
     1. Removing __MACOSX folder if it exists
-    2. Moving files from target subfolder to parent folder
-    3. Removing the target subfolder
+    2. Removing train_annotations_task_2 folder if it exists
+    3. Moving files from target subfolder to parent folder
+    4. Removing the target subfolder
     
     Args:
         parent_folder: Path to the folder containing the extracted files
         target_subfolder: Name of the subfolder containing the actual data
                          (e.g., "test_good" or "train_annotations")
                          If None, will try to auto-detect common folder names
+        task_2_folder: Name of the TASK-2 folder to remove
         macosx_folder: Name of the macOS metadata folder to remove
     """
     parent_folder = Path(parent_folder)
@@ -82,6 +85,16 @@ def cleanup_extracted_files(
             logger.info(f"Removed {macosx_folder} folder")
         except Exception as e:
             logger.warning(f"Could not remove {macosx_folder} folder: {e}")
+
+    # Remove TASK-2 folder if it exists
+    task_2_path = parent_folder / task_2_folder
+    if task_2_path.exists() and task_2_path.is_dir():
+        logger.info(f"Removing {task_2_path} folder")
+        try:
+            shutil.rmtree(task_2_path)
+            logger.info(f"Removed {task_2_path} folder")
+        except Exception as e:
+            logger.warning(f"Could not remove {task_2_path} folder: {e}")
     
     # Move files from target subfolder to parent folder
     if target_path.exists() and target_path.is_dir():

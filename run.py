@@ -39,4 +39,8 @@ def determine_root_path() -> str:
 
 # --- Entry Point ---
 if __name__ == '__main__':
-    main(global_root=determine_root_path())
+    main(
+        global_root=determine_root_path(),
+        download_datasets=False,
+        segmentate_documents=True
+    )

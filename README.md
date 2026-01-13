@@ -104,8 +104,7 @@ ToxHabits_Augmentation/
 ├── src/
 │   ├── ingestion/          # Download and segmentation scripts
 │   │   ├── download_zenodo.py
-│   │   ├── document_segmentation.py
-│   │   └── validate_licenses.py
+│   │   └── document_segmentation.py
 │   │
 │   ├── ner/                # Regex logic for generating new .ann
 │   │   └── entity_postprocessing.py

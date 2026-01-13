@@ -15,17 +15,21 @@ import sys
 # --- Local Imports ---
 from .utils.logging import logger
 from .ingestion.dowload_zenodo import download_toxhabits_datasets
-
+from .ingestion.document_segmentation import segmentate_toxhabits_documents
 
 
 def main(
-    global_root: str = None
+    global_root: str = None,
+    download_datasets: bool = False,
+    segmentate_documents: bool = False
 ) -> None:
     """
     This function is the main entry point and should be called once to start the server.
 
     Args:
         global_root: Optional root path for resource files
+        download_datasets: Flag to trigger dataset downloading
+        segmentate_documents: Flag to trigger document segmentation
     """
     try:
         # Check for required packages
@@ -43,8 +47,13 @@ def main(
             logger.error(f"Please install them using: pip install {' '.join(missing_packages)}")
             sys.exit(1)
         
-        # Start dataset download
-        download_toxhabits_datasets(global_root)
+        if download_datasets:
+            # Start dataset download
+            download_toxhabits_datasets(global_root)
+
+        if segmentate_documents:
+            # Start document segmentation
+            segmentate_toxhabits_documents(global_root)
         
     except KeyboardInterrupt:
         logger.info("\n\nDownload interrupted by user")
