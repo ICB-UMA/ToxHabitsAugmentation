@@ -48,7 +48,7 @@ def download_toxhabits_datasets(
         },
         {
             "name": "Test",
-            "record_id": "15538314",
+            "record_id": "17566029",
             "path": str(base / "data" / "raw" / "test"),
             "subfolder": "test_good",
         },

@@ -23,7 +23,9 @@ def main(
     global_root: str = None,
     download_datasets: bool = False,
     segmentate_documents: bool = False,
-    generate_documents: bool = False
+    generate_documents: bool = False,
+    prompt_type: str = "method_1_var",
+    model: str = "llama3.2-3b"
 ) -> None:
     """
     This function is the main entry point and should be called once to start the server.
@@ -33,6 +35,8 @@ def main(
         download_datasets: Flag to trigger dataset downloading
         segmentate_documents: Flag to trigger document segmentation
         generate_documents: Flag to trigger document generation
+        prompt_type: Type of prompt to use for generation
+        model: Model to use for document generation
     """
     try:
         # Check for required packages
@@ -59,16 +63,12 @@ def main(
             segmentate_toxhabits_documents(global_root)
         
         if generate_documents:
-            # Set the desired parameters
-            prompt_type = "method_1_var"
-            model = "llama3.2-3b"
-
             # Start document generation
             run_generation_workflow(prompt_type, model, global_root)
 
     except KeyboardInterrupt:
         logger.info("\n\nDownload interrupted by user")
         sys.exit(1)
-    # except Exception as e:
-    #     logger.error(f"\nUnexpected error: {e}")
-    #     sys.exit(1)
+    except Exception as e:
+        logger.error(f"\nUnexpected error: {e}")
+        sys.exit(1)

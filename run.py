@@ -39,9 +39,15 @@ def determine_root_path() -> str:
 
 # --- Entry Point ---
 if __name__ == '__main__':
+    # Set the desired parameters
+    prompt_type = "method_1_var"
+    model = "llama3.2-3b"
+
     main(
         global_root=determine_root_path(),
-        download_datasets=False,
-        segmentate_documents=False,
-        generate_documents=True
+        download_datasets=True,
+        segmentate_documents=True,
+        generate_documents=True,
+        prompt_type=prompt_type,
+        model=model
     )

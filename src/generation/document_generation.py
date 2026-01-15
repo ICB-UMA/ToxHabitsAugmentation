@@ -71,8 +71,11 @@ def run_generation_workflow(
     with open(prompt_file, 'r', encoding='utf-8') as f:
         base_prompt = f.read()
 
+    # Sanitize model name for output path
+    model_name = "".join(x for x in model if str(x).isalnum() or str(x) in ['-', '_'])
+
     # Create output path
-    output_path = os.path.join(output_path, f"{prompt_type}")
+    output_path = os.path.join(output_path, prompt_type, model_name)
 
     # Load parameters from YAML
     yaml_file = os.path.join(yaml_file_path, f"{model}.yml")
