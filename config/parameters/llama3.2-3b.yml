@@ -1,0 +1,18 @@
+# Required: Exact name of the Ollama model (must be pulled first with `ollama pull name`)
+model_name: "llama3.2:3b-instruct-fp16"
+
+# Optional: System prompt to define model behavior
+system_prompt: >
+  You are an expert linguistic editor specializing in named entity recognition (NER),
+  entity replacement and structured data formatting.
+  Always follow user instructions exactly and avoid adding extra information.
+
+# Optional: Generation parameters (override Ollama defaults)
+generation_options:
+  temperature: 0.7          # Lower = more deterministic output
+  max_tokens: 2048          # Maximum length of generated response
+  top_p: 0.9                # Nucleus sampling threshold
+  top_k: 40                 # Higher = more diverse text
+  repeat_last_n: 64         # How far back for the model to look back to prevent repetition
+  repeat_penalty: 1.1       # How strongly to penalize repetitions
+  num_predict: 128          # Maximum number of tokens to predict when generating text

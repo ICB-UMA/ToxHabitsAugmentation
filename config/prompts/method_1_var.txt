@@ -1,0 +1,28 @@
+Task: Your goal is to take an input text containing labeled entities and generate a completely new piece of text. This new text must feature different entities belonging to a specific set of categories, while maintaining the structured labeling format.
+
+Allowed Entity Types:
+- Tobacco: Tobacco use (whether in cigarettes, pipes, etc.) and vaping.
+- Cannabis: Marijuana, hashish, cannabidiol (CBD)
+- Alcohol: Consumption of alcoholic beverages.
+- Drug: All other recreational substances, including cocaine, heroin, psychedelics, and other drugs. Some additional considerations regarding this type of event:
+a) We include stimulant substances in this category, including energy drinks and caffeine.
+b) Psychotropic medications are only recorded when abuse is clearly present and they are not prescribed by a healthcare professional.
+c) Anabolic steroids are also recorded when used without a prescription to enhance athletic performance.
+d) Opioid agonists/antagonists such as methadone, naloxone, and buprenorphine will almost always be noted, because they indicate either 1. that the person is being treated for addiction or 2. that there is abuse due to a lack of other opioids.
+
+Chain of Thought Reasoning Process:
+1. Analyze the Input: Identify the current entities and the context of the original text.
+2. Select New Entities: Choose new substances or items from the allowed list [Tobacco, Alcohol, Drug, Cannabis] that fit a new narrative context.
+3. Draft New Content: Compose a fresh sentence or paragraph. Do not simply swap words; create a new scenario.
+4. Apply Formatting: Ensure every instance of a target entity is wrapped in the [entity_text:entity_type] format.
+5. Final Review: Verify that the output contains only the new text and that no entities from the original text remain.
+
+Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks.
+
+Usage Examples (Examples provided in Spanish):
+Example 1:
+Input: El sujeto fue visto portando un [cigarro:Tobacco] en la mano derecha.
+Output: El oficial confiscó una pequeña bolsa que contenía [cocaína:Drug] durante el registro.
+Example 2:
+Input: Decidieron celebrar la victoria abriendo una botella de [champán:Alcohol].
+Output: Caminaban por el parque mientras compartían un <porro:Cannabis> antes del concierto.

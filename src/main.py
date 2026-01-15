@@ -16,12 +16,14 @@ import sys
 from .utils.logging import logger
 from .ingestion.dowload_zenodo import download_toxhabits_datasets
 from .ingestion.document_segmentation import segmentate_toxhabits_documents
+from .generation.document_generation import run_generation_workflow
 
 
 def main(
     global_root: str = None,
     download_datasets: bool = False,
-    segmentate_documents: bool = False
+    segmentate_documents: bool = False,
+    generate_documents: bool = False
 ) -> None:
     """
     This function is the main entry point and should be called once to start the server.
@@ -30,10 +32,11 @@ def main(
         global_root: Optional root path for resource files
         download_datasets: Flag to trigger dataset downloading
         segmentate_documents: Flag to trigger document segmentation
+        generate_documents: Flag to trigger document generation
     """
     try:
         # Check for required packages
-        required_packages = ['requests', 'tqdm']
+        required_packages = ['requests', 'tqdm', 'ollama']
         missing_packages = []
         
         for package in required_packages:
@@ -55,9 +58,17 @@ def main(
             # Start document segmentation
             segmentate_toxhabits_documents(global_root)
         
+        if generate_documents:
+            # Set the desired parameters
+            prompt_type = "method_1_var"
+            model = "llama3.2-3b"
+
+            # Start document generation
+            run_generation_workflow(prompt_type, model, global_root)
+
     except KeyboardInterrupt:
         logger.info("\n\nDownload interrupted by user")
         sys.exit(1)
-    except Exception as e:
-        logger.error(f"\nUnexpected error: {e}")
-        sys.exit(1)
+    # except Exception as e:
+    #     logger.error(f"\nUnexpected error: {e}")
+    #     sys.exit(1)

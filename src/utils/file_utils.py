@@ -18,9 +18,12 @@ from requests.adapters import HTTPAdapter
 from .logging import logger
 from ..imports import (
     tqdm,
+    yaml,
     shutil,
     zipfile,
     requests,
+    Any,
+    Dict,
     Path,
     Union,
     Optional,
@@ -302,3 +305,44 @@ def get_requests_session(
     session.mount("https://", adapter)
     session.mount("http://", adapter)
     return session
+
+
+def load_params_from_yaml(
+    yaml_file_path: str
+) -> Dict[str, Any]:
+    """
+    Loads model configuration from a YAML file.
+
+    Expected YAML structure:
+    - model_name: Required name of the model
+    - system_prompt: Optional system prompt for the model
+    - generation_options: Optional dictionary of generation parameters
+
+    Args:
+        yaml_file_path: Full path to your YAML configuration file
+
+    Returns:
+        Dictionary with keys: model_name, system_prompt, generation_options
+    """
+    if not yaml_file_path.endswith((".yml", ".yaml")):
+        logger.error("File must be a YAML file with .yml or .yaml extension")
+        raise ValueError("File must be a YAML file with .yml or .yaml extension")
+
+    try:
+        with open(yaml_file_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+    except FileNotFoundError:
+        logger.error(f"YAML config file not found at {yaml_file_path}")
+        raise FileNotFoundError(f"YAML config file not found at {yaml_file_path}")
+
+    # Validate required fields
+    if "model_name" not in config:
+        logger.error("YAML config is missing required field: `model_name`")
+        raise KeyError("YAML config is missing required field: `model_name`")
+
+    # Set defaults for optional fields
+    return {
+        "model_name": config["model_name"],
+        "system_prompt": config.get("system_prompt"),
+        "generation_options": config.get("generation_options", {})
+    }

@@ -8,16 +8,14 @@ This module provides:
 - Functions to adjust entity offsets relative to sentences.
 """
 
-# --- Third-Party Imports ---
-from urllib3.util import Retry
-from requests.adapters import HTTPAdapter
-
 # --- Local Imports ---
 from .logging import logger
 from ..imports import (
+    os,
     Dict,
     List,
     Path,
+    Optional,
     SENTENCE_SPLITTER
 )
 
@@ -39,8 +37,8 @@ def adjust_entity_offsets(
     return {
         'id': entity['id'],
         'type': entity['type'],
-        'start': entity['start'] - sentence_start,
-        'end': entity['end'] - sentence_start,
+        'start': entity['start'] + sentence_start,
+        'end': entity['end'] + sentence_start,
         'text': entity['text']
     }
 
@@ -115,6 +113,61 @@ def format_ann_content(
         line = f"{entity['id']}\t{entity['type']} {entity['start']} {entity['end']}\t{entity['text']}"
         lines.append(line)
     return '\n'.join(lines) + '\n' if lines else ''
+
+    
+def get_document_with_entities(
+    base_path: str,
+    filename: str,
+    output_file: Optional[str] = None
+) -> str:
+    """
+    Given a base filename (without extension), reads .txt and .ann files from `base_path`,
+    and returns (or writes) a file/string with the text modified so that entities are 
+    marked as [entity_text:entity_type].
+    
+    Args:
+        base_path: Directory containing the .txt and .ann files
+        filename: Base filename without extension
+        output_file: Optional path to write the output to a file
+        
+    Returns:
+        String with marked entities in the format [entity_text:entity_type]
+    """
+    # Convert to Path objects
+    txt_path = Path(os.path.join(base_path, f"{filename}.txt"))
+    ann_path = Path(os.path.join(base_path, f"{filename}.ann"))
+
+    # Read the text from the txt file
+    with open(txt_path, 'r', encoding='utf-8') as f:
+        text = f.read()
+
+    # Parse the ann file and return a list of entities
+    entities = parse_ann_file(ann_path)
+    
+    # Sort entities by start position in descending order
+    # This prevents index shifting when we replace text from the end backwards
+    entities_sorted = sorted(entities, key=lambda x: x['start'], reverse=True)
+    
+    # Replace entities in reverse order to maintain correct indices
+    marked_text = text
+    for entity in entities_sorted:
+        start = entity['start']
+        end = entity['end']
+        entity_text = entity['text']
+        entity_type = entity['type']
+        
+        # Create the marked entity
+        marked_entity = f"[{entity_text}:{entity_type}]"
+        
+        # Replace the original entity text with the marked version
+        marked_text = marked_text[:start] + marked_entity + marked_text[end:]
+    
+    # Write to file if output_file is provided, otherwise return the string
+    if output_file:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(marked_text)
+    
+    return marked_text
 
 
 def parse_ann_file(

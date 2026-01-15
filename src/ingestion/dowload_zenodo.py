@@ -27,16 +27,16 @@ from ..imports import (
 
 
 def download_toxhabits_datasets(
-    base_dir: Optional[str] = None
+    base_path: Optional[str] = None
 ) -> None:
     """
-    Download the Training and Test datasets to ``base_dir`` (defaults to home).
+    Download the Training and Test datasets to ``base_path`` (defaults to home).
 
     Args:
-        base_dir: optional base directory to store datasets; defaults to the user's home directory
+        base_path: optional base directory to store datasets; defaults to the user's home directory
     """
     # Determine base path
-    base = Path(base_dir) if base_dir else Path.home()
+    base = Path(base_path) if base_path else Path.home()
 
     # Define datasets to download
     datasets = [

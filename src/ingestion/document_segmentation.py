@@ -154,7 +154,7 @@ def segmentate_toxhabits_documents(
             
             # Adjust entity offsets for the extracted sentence
             adjusted_entities = [
-                adjust_entity_offsets(entity, sentence_start) 
+                adjust_entity_offsets(entity, -sentence_start) 
                 for entity in sentence_entities
             ]
             

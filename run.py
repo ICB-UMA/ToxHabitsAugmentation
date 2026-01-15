@@ -42,5 +42,6 @@ if __name__ == '__main__':
     main(
         global_root=determine_root_path(),
         download_datasets=False,
-        segmentate_documents=True
+        segmentate_documents=False,
+        generate_documents=True
     )
