@@ -1,0 +1,22 @@
+# Required: Exact name of the Gemini model
+model_name: "gemini-1.5-flash"
+
+# Optional: System prompt to define model behavior
+system_prompt: >
+  You are an expert linguistic editor specializing in named entity recognition (NER),
+  entity replacement and structured data formatting.
+  Always follow user instructions exactly and avoid adding extra information.
+
+# Optional: Generation parameters
+generation_options:
+  temperature: 0.3
+  max_output_tokens: 4096
+  top_p: 0.95
+  top_k: 40
+
+# Optional: Safety parameters
+safety_settings:
+  block_harassment: "BLOCK_MEDIUM_AND_ABOVE"
+  block_hate_speech: "BLOCK_MEDIUM_AND_ABOVE"
+  block_sexually_explicit: "BLOCK_MEDIUM_AND_ABOVE"
+  block_dangerous_content: "BLOCK_MEDIUM_AND_ABOVE"

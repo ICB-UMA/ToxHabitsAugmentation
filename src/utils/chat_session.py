@@ -16,8 +16,11 @@ from ..imports import (
 
 @dataclass
 class LLMChatSession:
-    """Structured object to track Ollama chat session state"""
+    """Structured object to track LLM chat session state"""
     model_name: str
     generation_options: Dict[str, Any]
     chat_history: List[Dict[str, str]]
     is_active: bool = True
+    gemini_client: Any = None
+    gemini_chat: Any = None
+    api_key: str = ""

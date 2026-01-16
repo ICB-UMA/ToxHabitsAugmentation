@@ -11,7 +11,8 @@ from ..utils.chat_session import LLMChatSession
 from ..imports import (
     Dict,
     Optional,
-    Any
+    Any,
+    List
 )
 
 
@@ -30,6 +31,48 @@ def create_openai_chat_session(
 
     Returns:
         Initialized LLMChatSession object
+    """
+    return None
+
+
+def send_openai_message_with_pdf(
+    session: LLMChatSession,
+    user_message: str,
+    pdf_path: str,
+    stream: bool = False
+) -> str:
+    """
+    Sends a message along with a PDF document to the Gemini model.
+    
+    Args:
+        session: Active LLMChatSession object with Gemini attributes
+        user_message: User's input message about the PDF
+        pdf_path: Path to the PDF file to analyze
+        stream: If True, returns incremental responses (default: False)
+    
+    Returns:
+        Full assistant response text
+    """
+    return None
+
+
+def send_openai_message_with_documents(
+    session: LLMChatSession,
+    user_message: str,
+    document_paths: List[str],
+    stream: bool = False
+) -> str:
+    """
+    Sends a message along with multiple documents (PDFs, images, etc.) to Gemini.
+    
+    Args:
+        session: Active LLMChatSession object with Gemini attributes
+        user_message: User's input message about the documents
+        document_paths: List of paths to documents to analyze
+        stream: If True, returns incremental responses (default: False)
+    
+    Returns:
+        Full assistant response text
     """
     return None
 

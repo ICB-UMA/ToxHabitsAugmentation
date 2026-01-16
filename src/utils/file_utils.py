@@ -17,6 +17,7 @@ from requests.adapters import HTTPAdapter
 # --- Local Imports ---
 from .logging import logger
 from ..imports import (
+    os,
     tqdm,
     yaml,
     shutil,
@@ -235,6 +236,21 @@ def download_file(
                 logger.warning("Failed to remove partial file %s", file_path)
         # Re-raise so callers can decide how to handle the error
         raise
+
+
+def extract_filename_without_extension(
+    file_path: str
+) -> str:
+    """
+    Extract filename without extension from a path.
+
+    Args:
+        file_path: Path to the file to extract without its extension
+    
+    Returns:
+        Extracted filename without extension
+    """
+    return os.path.splitext(os.path.basename(file_path))[0]
 
 
 def extract_zip_file(
