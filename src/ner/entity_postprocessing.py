@@ -41,6 +41,7 @@ def extract_entities_and_clean_text(
     entities = []
     cleaned_parts = []          
     last_index = 0
+    displacement = 0
 
     for match in regex.finditer(raw_text):
         # Append the part *before* the current marker
@@ -51,7 +52,7 @@ def extract_entities_and_clean_text(
         entity_type = match.group(2)
 
         # Record the entity with offsets of the *whole* marker
-        marker_start = match.start()
+        marker_start = match.start() - displacement
         marker_end   = marker_start + len(entity_text)
 
         entities.append({
@@ -67,6 +68,9 @@ def extract_entities_and_clean_text(
 
         # Move the cursor past this marker so the next loop iteration starts after it
         last_index = match.end()
+
+        # Calculate the new offset when removing the entity type and the colon characters [:]
+        displacement = displacement + 3 + len(entity_type)
 
     # Append the final tail (everything after the last marker)
     cleaned_parts.append(raw_text[last_index:])
