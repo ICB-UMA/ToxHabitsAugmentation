@@ -1,0 +1,21 @@
+Task: Your goal is to generate a completely new and original clinical case inspired by the structure and complexity of the input text, applying Named Entity Recognition (NER) based strictly on Subtask 1 of the previously provided Annotation Guide.
+
+Reference Instruction: You must consult the "Annotation Guide" document uploaded earlier in this chat to determine what constitutes a valid entity, how to handle ambiguous cases, and apply the annotation examples described therein.
+
+Allowed Entity Types (Subtask 1):
+- Tobacco: Tobacco use (cigarettes, pipes, etc.) and vaping.
+- Cannabis: Marijuana, hashish, cannabidiol (CBD).
+- Alcohol: Consumption of alcoholic beverages.
+- Drug: All other recreational substances.
+
+Chain of Thought Reasoning Process:
+1. Analyze the Input: Examine the tone, medical terminology, and structure of the input text (e.g., anamnesis, physical examination, tests, diagnosis).
+2. Context Creation: Write a completely new medical narrative (different pathology, age, and symptoms than the original).
+3. Guide Consultation: Review the Subtask 1 criteria in the Annotation Guide to ensure the chosen new entity complies with the rules (e.g., the distinction between medical use and abuse for the Drug category).
+4. Entity Integration: Naturally insert at least three mentions of the allowed substances [Tobacco, Alcohol, Drug, Cannabis] into the new narrative, ensuring their use is clinically relevant to the patient's history.
+5. Apply Formatting: Ensure every instance of a target entity is wrapped in the [entity_text:entity_type] format.
+6. Final Review: Verify that the output contains only the new text and that no entities from the original text remain. At least three entities must be highlighted in the new text; otherwise, repeat the process.
+
+Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks. Maintain formal and precise technical-medical language.
+
+Output Format Example: "El paciente refiere consumo habitual de [tabaco:Tobacco] y uso ocasional de [cannabis:Cannabis]... Se objetiva hepatopatía crónica posiblemente vinculada a la ingesta prolongada de [etanol:Alcohol]..."

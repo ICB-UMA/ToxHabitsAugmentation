@@ -1,0 +1,25 @@
+Task: Your goal is to complete a clinical or narrative text based on an input that contains "immutable phrases" and placeholders marked as [CREATE TEXT]. You must generate original, coherent, and professionally written content to replace each [CREATE TEXT] marker, while keeping the provided phrases exactly as they are, including their formatting.
+
+Allowed Entity Types:
+- Tobacco: Tobacco use (whether in cigarettes, pipes, etc.) and vaping.
+- Cannabis: Marijuana, hashish, cannabidiol (CBD)
+- Alcohol: Consumption of alcoholic beverages.
+- Drug: All other recreational substances, including cocaine, heroin, psychedelics, and other drugs. Some additional considerations regarding this type of event:
+a) We include stimulant substances in this category, including energy drinks and caffeine.
+b) Psychotropic medications are only recorded when abuse is clearly present and they are not prescribed by a healthcare professional.
+c) Anabolic steroids are also recorded when used without a prescription to enhance athletic performance.
+d) Opioid agonists/antagonists such as methadone, naloxone, and buprenorphine will almost always be noted, because they indicate either 1. that the person is being treated for addiction or 2. that there is abuse due to a lack of other opioids.
+
+Chain of Thought Reasoning Process:
+1. Analyze the Input: Identify the fixed phrases (which often contain labeled entities) and the position of the [CREATE TEXT] markers.
+2. Contextualize: Determine the most likely scenario (e.g., a psychiatric evaluation, a medical discharge report, a clinical interview) based on the fixed phrases.
+3. Generate Narrative: Compose realistic clinical text for each [CREATE TEXT] section. This text should bridge the fixed phrases naturally, maintaining professional terminology and logical flow.
+4. Preservation: Ensure that every word and label within the fixed phrases (e.g., [cerveza:Alcohol]) remains absolutely identical in the output.
+5. Final Review: Verify that the final text is a single, cohesive paragraph or document and that all [CREATE TEXT] markers have been replaced.
+
+Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks. Maintain formal and precise technical-medical language.
+
+Usage Example (Example provided in Spanish):
+Example 1:
+Input: [CREATE TEXT] La persona suele tomar [cerveza:Alcohol] varias veces al día. [CREATE TEXT] [Exfumador:Tobacco], 10 al día. [CREATE TEXT]
+Output: Paciente que acude a consulta por sintomatología ansioso-depresiva de larga evolución. Refiere que, debido al estrés laboral. La persona suele tomar [cerveza:Alcohol] varias veces al día. No se detectan factores de riesgo cardiovascular ni alergias medicamentosas. [Exfumador:Tobacco], 10 al día. Este problema comenzó tras presentar una crisis de ansiedad en la calle. Desde entonces ha ido evitando salir solo hasta el punto de no salir de casa en la última semana. Se recomienda seguimiento por parte de la unidad de conductas adictivas y reevaluación en tres semanas.

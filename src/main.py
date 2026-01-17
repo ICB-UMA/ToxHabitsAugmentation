@@ -67,7 +67,7 @@ def main(
             run_generation_workflow(prompt_type, model, global_root)
 
     except KeyboardInterrupt:
-        logger.info("\n\nDownload interrupted by user")
+        logger.info("\n\nProcess interrupted by user")
         sys.exit(1)
     except Exception as e:
         logger.error(f"\nUnexpected error: {e}")

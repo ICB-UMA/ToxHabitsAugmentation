@@ -12,17 +12,17 @@ d) Opioid agonists/antagonists such as methadone, naloxone, and buprenorphine wi
 
 Chain of Thought Reasoning Process:
 1. Analyze the Input: Identify the current entities and the context of the original text.
-2. Select New Entities: Choose new substances or items from the allowed list [Tobacco, Alcohol, Drug, Cannabis] that fit a new narrative context.
-3. Draft New Content: Compose a fresh sentence or paragraph. Do not simply swap words; create a new scenario.
+2. Select New Entities: Choose at least three mentions of the substances or items from the allowed list [Tobacco, Alcohol, Drug, Cannabis] that fit a new narrative context.
+3. Draft New Content: Compose a fresh sentence or paragraph in the context of a medical consultation. Do not simply swap words; create a new clinical text.
 4. Apply Formatting: Ensure every instance of a target entity is wrapped in the [entity_text:entity_type] format.
-5. Final Review: Verify that the output contains only the new text and that no entities from the original text remain.
+5. Final Review: Verify that the output contains only the new text and that no entities from the original text remain. At least three entities must be highlighted in the new text; otherwise, repeat the process.
 
-Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks.
+Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks. Maintain formal and precise technical-medical language.
 
 Usage Examples (Examples provided in Spanish):
 Example 1:
-Input: El sujeto fue visto portando un [cigarro:Tobacco] en la mano derecha.
-Output: El oficial confiscó una pequeña bolsa que contenía [cocaína:Drug] durante el registro.
+Input: Varón de 71 años de edad, [fumador:Tobacco], sin antecedentes personales relevantes.
+Output: Se presenta en consulta un hombre de 65 años, consumidor diario de [cerveza:Alcohol] (3 al día) y habitual de [porros:Cannabis].
 Example 2:
-Input: Decidieron celebrar la victoria abriendo una botella de [champán:Alcohol].
-Output: Caminaban por el parque mientras compartían un <porro:Cannabis> antes del concierto.
+Input: Acude por primera vez a terapia en abril de 2012 por consumo de [cocaína:Drug] y [heroína:Drug].
+Output: Presenta un cuadro clínico normal, no [fumador:Tobacco], con antecedentes de abuso de [cafeína:Drug], además de recibir algunos ciclos de [esteroides: Drug].
