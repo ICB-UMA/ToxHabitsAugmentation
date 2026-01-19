@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-...
+Ollama Generation Utilities
+
+This module provides functions to create and manage chat sessions
+with Ollama models, send messages, and handle responses.
 """
 
 # --- Third-Party Imports ---

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-...
+Chat Session Data Structure for LLM Interactions.
+
+This module defines a structured object to maintain the state of a chat session
+with a Large Language Model (LLM), including model details, generation options,
+chat history, and session status.
 """
 
 # --- Third-Party Imports ---

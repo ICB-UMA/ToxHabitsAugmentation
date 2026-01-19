@@ -2,12 +2,12 @@
 """
 Utilities for file handling and downloads.
 
-This module provides:
-- create_directories: ensure destination folders exist
-- get_requests_session: create a requests.Session with retry/backoff
-- download_file: robust file downloader with progress reporting and logging
-
-The functions use `requests.Session` for connection reuse and `tqdm` for progress bars.
+This module provides functions to:
+- Create directory structures if they don't exist.
+- Download files with progress bars and retry logic.
+- Extract zip files to specified directories.
+- Clean up extracted files by removing unnecessary folders.
+- Load model parameters from YAML configuration files.
 """
 
 # --- Third-Party Imports ---

@@ -3,9 +3,9 @@
 Text Utilities for BRAT Annotations and phrase extraction.
 
 This module provides:
-- Functions to parse BRAT .ann files.
-- Functions to extract sentences containing entities.
-- Functions to adjust entity offsets relative to sentences.
+- Functions to parse BRAT .ann files and extract entity annotations.
+- Functions to find sentences containing entities.
+- Functions to format entities back into BRAT .ann file format.
 """
 
 # --- Local Imports ---

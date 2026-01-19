@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-...
+Entity post-processing utilities for ToxHabitsAugmentation project.
+
+This module provides functions to extract entities from raw text with
+custom markers, adjust entity offsets after text modifications, and save
+the generated text along with its annotations to disk.
 """
 
 # --- Local Imports ---

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-...
+Gemini LLM Integration Module
+
+This module provides functions to create and manage chat sessions with
+Google's Gemini language models, including sending messages and handling
+PDF/document attachments.
 """
 
 # --- Third-Party Imports ---
