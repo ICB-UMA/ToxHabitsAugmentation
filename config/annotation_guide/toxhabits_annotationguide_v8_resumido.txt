@@ -1,0 +1,208 @@
+ToxHabits: Guías de Anotación y Normalización de Uso y Abuso de Sustancias en Textos Clínicos
+
+TABLA 1. CARACTERIZACIÓN DE LAS PRINCIPALES SUSTANCIAS
+
+[TABACO]
+Descripción: El tabaco es una sustancia que se obtiene principalmente del procesamiento de la planta Nicotiana tabacum.
+Vía: Suele consumirse inhalado, ya sea en cigarrillos liados o industriales o en pipa, aunque también puede mascarse.
+Cuantificación: El consumo de tabaco suele medirse en cigarrillos/día y paquetes/año.
+
+[VAPING]
+Descripción: El vaping consiste en el uso de cigarrillos electrónicos con los cuales se inhala vapor en lugar de humo.
+Aunque el vaping no se refiera a una sustancia sino a un método de consumo, lo incluimos junto al tabaco porque consideramos que su forma de consumo, consideraciones sociales y lenguaje usado son suficientemente similares.
+Vía: Inhalada.
+Cuantificación: -
+
+[ALCOHOL]
+Descripción: Uso y abuso en el consumo de bebidas alcohólicas de distinta concentración.
+Vía: Oral.
+Cuantificación: UBE (unidades de bebida estándar; 1 UBE equivale 10 g de etanol). También copas, botellas, latas, ...
+
+[CANNABIS]
+Descripción: El cannabis (también marihuana, hachís) es una sustancia psicotropa que se obtiene del cultivo de Cannabis sativa.
+Vía: Fumada, ingerida.
+Cuantificación: UPE (unidad de porro estándar), porros, gramos, ...
+
+[PSICOFÁRMACOS]
+Descripción: Sustancias de uso médico para mejorar trastornos y enfermedades.
+Los psicofármacos que forman parte del tratamiento indicado por profesionales de la salud no se anotan, solo si hay un abuso claro
+Vía: Cualquiera, en general oral.
+Ejemplos: Opioides, ansiolíticos, sedantes, estimulantes: morfina, oxicodona, anfetaminas, alprazolam
+
+[AGONISTAS/ANTAGONISTAS OPIÁCEOS]
+Descripción: Utilizados para tratar la dependencia a opiáceos: metadona, buprenorfina, naloxona, y combinaciones de éstos
+Vía: Oral, también intravenosa, supositorios y otras
+Ejemplos: Metadona, muñeca, chiste, jungo (nombres de calle)
+
+[OTRAS DROGAS]
+Descripción: Sustancias que van apareciendo en el mercado de drogas, incluída la inhalación de pegamento/colas.
+Vía: Oral, inhalada, fumada, intravenosa, ...
+Ejemplos: Cocaína, heroína, ketamina, cristal, spice, cannabinoides sintéticos, marihuana sintética, miau miau, flakka, superman, catinonas, mefedrona, derivados de los fentanilos, metoxetamina, NBOMe, ayahuasca, kratom, pegamento, colas, anabolizantes, esteroides, ...
+También algunos fármacos opioides si se especifica que se abusa de ellos (ej: buprenorfina/naloxona).
+
+--- 2. ANOTACIÓN DE USO DE SUSTANCIAS ---
+Etiquetas disponibles:
+Etiquetaremos cuatro tipos de marcadores de eventos distintos: tabaco, cannabis, alcohol y (otras) drogas (incluye psicofármacos y resto de sustancias ilícitas). Las reglas y argumentos son las mismas para los cuatro tipos, aunque cada uno tiene sus peculiaridades. Por ejemplo, en los eventos de alcohol raramente se hablará de por qué vía se consume, mientras que en otras drogas es muy común. Dentro de cada tipo entran los siguientes tipos de consumos:
+● Tabaco: consumo de tabaco (ya sea en cigarrillo, pipa, ...) y vapeo
+● Cannabis: marihuana, hachís, cannabidiol o CBD
+● Alcohol: consumo de bebidas con alcohol
+● Drogas: el resto de sustancias recreativas, incluyendo cocaína, heroína, psicodélicos y el resto de drogas que aparecen en la Tabla 1. Algunas consideraciones extra sobre este tipo de evento:
+○ Incluimos dentro de esta categoría las sustancias estimulantes, incluyendo bebidas energéticas y cafeína.
+○ Los psicofármacos solo se anotan cuando queda claro que hay un abuso y no están prescritos por profesionales.
+○ Anabolizantes y esteroides también se anotan cuando se usan sin receta médico con el objetivo de mejorar el rendimiento deportivo.
+○ Los agonistas/antagonistas de opiáceos como metadona, naloxona y buprenorfina se anotarán prácticamente siempre, por qué indicarán 1. que la persona se está tratando de una adicción o 2. que existe un abuso por no disponer de otros opioides.
+
+--- 3. REGLAS DE ANOTACIÓN ---
+
+TABLA 3. REGLAS GENERALES
+
+[G1] [anotaciones]
+Se anotan en el corpus todas las menciones directas al uso de sustancias, tanto positivas como negativas (p. ej.: “no consume drogas”). Las menciones que incluyan incertidumbre (p. ej.: “probable uso de tóxicos”) se anotan de manera normal.
+No se anotan menciones que no incluyan este tipo de información incluso si permiten inferir que el paciente es consumidor de sustancias (p. ej., cirrosis alcohólica) [ver regla G14].
+Tampoco anotamos menciones donde se hable de consumo de forma hipotética, se hagan recomendaciones o se hable del futuro (p. ej. “el uso de cannabis cada vez crece más...”, “se le recomienda no seguir con el uso de cannabis”).
+
+[G2] [anot-mínima]
+Solo hay dos etiquetas obligatorias para cada anotación de un evento: trigger y estatus. En cada evento debe haber obligatoriamente una de estas etiquetas (solo una). El resto son opcionales y se anotarán solo si aparecen en el texto.
+
+[G3] [alcance]
+Las anotaciones textuales deben estar formadas únicamente por palabras completas, evitando incluir puntuación excepto que sea absolutamente necesario.
+
+[G4] [anot-verbos]
+Cuando se anote un verbo debe anotarse la forma verbal completa, incluyendo verbos auxiliares como “haber”.
+[ejemplos] 1. había consumido
+
+[G5] [multi-frase]
+Aunque la mayoría de anotaciones de eventos ocurren dentro de la misma frase, está permitido hacer anotación entre frases solo en el caso de que en la frase anterior o siguiente a un evento aparezca información relevante sin un marcador propio cerca.
+[ejemplos] 2. Tabaco: de 2 a 3 paquetes al día durante 40 años. Lo dejó hace 5 meses.
+
+[G6] [multi-evento]
+Puede haber más de un marcador en una misma frase siempre que cada uno pertenezca a un evento distinto.
+[ejemplos] 3. Fuma dos paquetes al día y bebe un litro de vino todas las noches
+
+[G7] [multi-argument]
+Un mismo evento puede tener asociado más de un argumento del mismo tipo, excepto del tipo StatusTime (si tenemos dos StatusTime, lo más probable es que debamos hacer dos eventos distintos).
+[ejemplos] 4. Exfumador con inicio en la juventud y hasta hace 13 años, [10 cigarrillos] al día (ICAT [23 paquetes/año]).
+
+[G8] [multi-argument-2]
+Al revés que en la anterior, un mismo argumento puede estar asociado a más de un evento distinto.
+
+[G9] [sustancias-multi]
+Si aparecen listadas varias sustancias, normalmente cada una debe tener su propio evento (ver reglas SUST-2 y SUST-3).
+
+[G10] [psicofármacos]
+Los psicofármacos se anotarán únicamente cuando sea obvio en el texto que (1) no se toman bajo prescripción médica (anotaremos siempre el abuso de barbitúricos, de morfina, etc; no anotaremos la morfina si se toma con fines terapéuticos, por ejemplo en el caso de dolor neuropático o por infiltración tumoral); y (2) cuando se utilicen con fin autolítico. No se anotarán fármacos no capaces de crear psicoadicción, aunque se utilicen con fines autolíticos.
+[ejemplos] 7. Fallece a los tres días de la ingesta de 65 mg de lorazepam.
+8. Requiere vaciado gástrico tras la ingesta de 30 comprimidos de metotrexate.
+
+[G11] [mismo-tipo]
+Si aparecen dos tipos de argumentos del mismo tipo juntos en el texto se pueden anotar como una sola entidad mientras no haya palabras relacionadas por medio (con excepción de los tipos de sustancias, ver reglas G9, SUST-2).
+[ejemplos] 9. dos veces a la semana
+
+[G12] [otras-entidades]
+De manera general, anotaremos estas palabras y frases incluso si aparecen por sí solas en el texto sin ninguna referencia a alguna droga en concreto pero en un contexto de consumo.
+- consumo
+- adicción
+- conducta adictiva
+
+[G13] [comportamiento]
+De manera general, no anotaremos como argumentos adjetivos que describan comportamientos relacionados con el abuso: compulsivo, abusivo, ... (excepción: “crónico”, ver regla FDH-7). Tampoco incluimos palabras como “concomitante”.
+
+[G14] [enfermedad]
+No anotaremos enfermedades o problemas en general relacionados con o derivados del consumo de drogas (exceptuando la palabra “intoxicación” y “dependencia”, que tomaremos como sinónimo de “consumo” -> regla STAT-3)
+[ejemplos] 10. cirrosis hepática
+11. hiperémesis cannabinoide
+
+[G15] [infancia, accidental]
+La intoxicación por drogas o psicofármacos en la infancia y accidental se anotarán también.
+[ejemplos] 12. Lactante de 10 meses trasladada desde otro hospital por sospecha de ingesta de hachís de forma accidental.
+
+[G16] [acrónimos, abreviaturas]
+Los acrónimos se anotarán separadamente de su forma larga cuándo ésta aparezca. Las abreviaturas también se anotarán.
+[ejemplos] 13. Ingiere 20 pastillas de BZD [primera mención] (benzodiacepinas) [segunda mención]
+14. Mezcla cocaína con benzos y alcohol
+
+
+3.2 Reglas por tipo de entidad
+
+REGLAS PARA TRIGGERS (MARCADORES)
+
+[TRIG-1] [contenido]
+El marcador es la parte de un texto que nos hace saber que se está hablando de un consumo de sustancias. Suele estar formado por entre una y cuatro palabras que hacen referencia a tipos o nombres de sustancias o al consumo en general.
+Para elegir qué marcador anotamos seguiremos la siguiente jerarquía:
+1. Tipos generales (alcohol, tabaco, droga) y específicas (heroína, cocaína, hachís) de sustancias
+2. Sustantivos y sintagmas nominales que hagan referencia al consumo (consumidor, ingesta, fumador).
+3. Verbos que hagan referencia al consumo (fumar, beber).
+
+[TRIG-2] [alcance]
+Al anotar sintagmas nominales y verbales que hagan referencia al consumo (puntos 2 y 3 en la jerarquía de la regla TRIG-1), incluiremos el tipo de sustancia si es una sola, así como posibles adjetivos (habitual).
+[ejemplos] 17. zzz
+
+[TRIG-3] [solape]
+En ocasiones, el marcador puede corresponder al mismo trozo de texto que una entidad contextual.
+[ejemplos] 18. zzz
+
+[TRIG-4] [marc-comunes-tabaco]
+Estos son algunos de los marcadores comunes que anotaremos para el trigger TABACO:
+- “fumador@”
+- “fumar”
+
+[TRIG-5] [marc-comunes-alcohol]
+Estos son algunos de los marcadores comunes que anotaremos para el trigger ALCOHOL:
+- “bebedor@”
+- “beber”
+
+[TRIG-6] [marc-comunes-droga]
+Estos son algunos de los marcadores comunes que anotaremos para el trigger DROGA:
+- tipos de sustancias generales
+- nombres de sustancias concretas
+- usuari@, consumidor@
+- politoxicóman@
+- intoxicad@ (si la causa son drogas)
+- palabras comunes: drogad@, colocad@, empastillad@
+[ejemplos] 21. exconsumo de tóxicos
+
+[TRIG-7] [hab-tox]
+La frase “hábitos tóxicos” se puede anotar como marcador de tipo DROGA solo en el caso de que no aparezca ningún otro tipo de información sobre consumo de sustancias.
+Por ejemplo, si el texto dice “No hábitos tóxicos” podremos anotarlo. Sin embargo, si el texto dice: “Hábitos tóxicos: fumador, consumidor de cocaína, ...” no lo anotaremos.
+
+[TRIG-8] [desintoxicación]
+Las menciones a desintoxicaciones y deshabituaciones se pueden anotar con el trigger DROGA si no existe alternativa mejor. En estos casos el StatusTime será normalmente “current” (ver regla STAT-9).
+
+[TRIG-9] [pruebas]
+Las menciones a resultados positivos y negativos de pruebas para detectar sustancias en sangre/orina/etc. se anotarán también con el trigger correspondiente (normalmente CANNABIS o DROGA). En estos casos marcaremos como StatusTime la palabra “positivo” y “negativo”, así como la mención a la prueba si estas palabras no aparecen tal cual.
+
+[TRIG-10] [otras-sustancias]
+Si se mencionan sustancias de manera muy general (“otras drogas”, “resto de sustancias”, “nuevos tóxicos”) lo anotaremos con el trigger DROGA e incluiremos en la mención los determinantes o sintagmas que acompañan a la palabra de sustancia.
+Del mismo modo que en la regla TRIG-7, esta regla solo se aplica cuando no se especifique cuáles son las sustancias a las que se refiere la frase. Es decir, no se aplica en frases del estilo: “Resto de sustancias: cocaína los fines de semana, cannabis a diario”.
+[ejemplos] 24. Consumo perjudicial de alcohol y otros tóxicos
+
+[TRIG-11] [comercial]
+Anotaremos las sustancias que aparezcan en su forma comercial (fármacos, marcas de tabaco, de licores, etc.).
+
+REGLAS PARA TYPE (SUSTANCIA)
+
+[SUST-1] [contenido]
+La etiqueta type indica el tipo de sustancia concreta que usa el paciente.
+- Para tabaco no anotamos normalmente esta etiqueta, ya que asumimos que la sustancia es tabaco y sería redundante (excepción regla SUST-6).
+- Para alcohol, algunos ejemplos son: vodka, whisky, cerveza, ...
+- Para drogas: cocaína, MDMA, LSD, ...
+- Para cannabis: marihuana, hachís, CBD, ...
+
+[SUST-2] [unicidad]
+Si aparecen varias sustancias distintas seguidas, se anotan por separado aunque algunas se consideren enhancers de otras, por ejemplo, tomar benzodiacepinas junto con una bebida alcohólica. Normalmente cada una constituirá su propio evento (ver regla G9).
+
+[SUST-3] [mezclas]
+Como excepción a la regla anterior, si aparece alguna sustancia que consideramos tóxica mezclada con y tomada junto con alguna sustancia que por sí sólo no es una droga ni un fármaco psicotropo ni produce ningún tipo de adicción, pero que actúa como enhancer (por ejemplo, el amoníaco) se debe anotar como una sola entidad.
+Por ejemplo, cocaína + amoníaco = un evento (ver ejemplo), pero cocaína + heroína o cocaína + cafeína = dos eventos .
+
+[SUST-4] [generales]
+No anotamos como Type nombres generales de sustancias, que suelen corresponder al tipo de Trigger utilizado (e.g. tabaco, alcohol, cannabis, droga).
+
+[SUST-5] [clasificación]
+No se incluyen en esta etiqueta posibles clasificaciones de las sustancias con respecto a su uso (recreacional, ilícito, ...).
+
+[SUST-6] [forma]
+Se anotan con esta etiqueta también las formas físicas en la que se consume en la sustancia: cigarrillos, puros, porros, copas, ...
+
+[SUST-7] [forma-informal]
+En ocasiones encontraremos algunas sustancias para las que se menciona su composición química o compuesto principal junto a una manera más común o informal de llamarlas (muchas veces entre paréntesis). Estos casos se anotan siempre separadamente, cómo si se tratara de dos entidades distintas. Por ejemplo, en el caso de: sulfato de anfetamina (speed), tendremos una primera mención=sulfato de anfetamina; y una segunda=speed. Excepción: los fármacos que están formulados conjuntamente en forma de tableta, cápsula, etc., se anotarán de forma única. Por ejemplo, buprenorfina/naloxona=1 sola mención; ingiere tabletas de barbitúricos (=primera mención) y benzodiacepinas (=segunda mención).

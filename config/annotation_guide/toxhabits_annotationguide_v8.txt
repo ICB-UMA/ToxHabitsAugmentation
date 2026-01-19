@@ -1,0 +1,652 @@
+ToxHabits: Guías de Anotación y Normalización de Uso y Abuso de Sustancias en Textos Clínicos
+V8 [JUNIO 2025]
+
+AUTORES:
+Salvador Lima López (Barcelona Supercomputing Center)
+Eulàlia Farré-Maduell (Barcelona Supercomputing Center)
+Martin Krallinger (Barcelona Supercomputing Center)
+
+Licencia: CC BY-SA 4.0
+
+--- ÍNDICE ---
+1. INTRODUCCIÓN
+2. ANOTACIÓN DE USO DE SUSTANCIAS
+   - Etiquetado de eventos
+   - Etiquetas disponibles
+3. REGLAS DE ANOTACIÓN
+   - 3.1 Reglas generales
+   - 3.2 Reglas por tipo de entidad
+     - REGLAS PARA TRIGGERS (MARCADORES)
+     - REGLAS PARA STATUSTIME (ESTADO)
+     - REGLAS PARA TYPE (SUSTANCIA)
+     - REGLAS PARA METHOD (VIA)
+     - REGLAS PARA AMOUNT (CUANTIFICACIÓN)
+     - REGLAS PARA FREQUENCY, DURATION, HISTORY (FRECUENCIA, DURACIÓN, FECHA)
+4. REGLAS DE NORMALIZACIÓN
+   - 4.1 Reglas generales de normalización
+   - 4.2 Códigos propuestos
+     - CÓDIGOS PARA TRIGGERS MÁS FRECUENTES
+     - CÓDIGOS PARA TABACO
+     - CÓDIGOS PARA VAPING
+     - CÓDIGOS PARA CANNABIS
+     - CÓDIGOS PARA ALCOHOL
+     - CÓDIGOS PARA DROGAS (GENERALES)
+     - CÓDIGOS PARA SUSTANCIAS (TYPE)
+     - CÓDIGOS PARA VÍAS (METHOD)
+     - CÓDIGOS PARA CANTIDAD (AMOUNT)
+
+--- 1. INTRODUCCIÓN ---
+Esta guía describe el proceso de anotación y normalización del corpus de hábitos tóxicos ToxHabits, una colección de 1,500 casos clínicos en castellano de distintas especialidades médicas como urgencias, psiquiatría y hepatología anotados con menciones relacionadas con el uso y abuso de sustancias nocivas. Parte de las menciones del corpus ha sido normalizada usando la terminología SNOMED-CT.
+
+Motivación:
+Alrededor de 270 millones de personas en todo el mundo (alrededor del 5,5 % de la población mundial de 15 a 64 años) consumen drogas psicoactivas, con importantes consecuencias para la salud. Los trastornos por consumo de drogas aumentan los riesgos de morbilidad y mortalidad y deterioran el funcionamiento personal, familiar, social, educativo y ocupacional. Los trastornos por consumo de drogas se asocian con pérdida de productividad, mortalidad prematura, mayor gasto en atención médica y costos relacionados con la justicia penal y el bienestar social. Se estima que alrededor de 35 millones de personas están afectadas por trastornos relacionados con el consumo de drogas (drogodependencia), y 0.5 millones de muertes anuales son atribuibles al consumo de drogas (350.000 muertes de hombres y 150.000 de mujeres). Se estima que en todo el mundo hay casi 11 millones de personas que se inyectan drogas, de los cuales 1,4 millones viven con el VIH y 5,6 millones con hepatitis C (https://www.who.int/health-topics/drugs-psychoactive#tab=tab_2).
+
+Según el European Drug Report 2022, el 29% de los adultos (15-64 años) en la Unión Europea han utilizado alguna vez una droga ilícita. El cannabis sigue siendo la sustancia más consumida, seguida de estimulantes. En 2021, aprox. 3,5 millones de adultos consumieron cocaína, 2,6 millones MDMA, 2 millones anfetaminas y 1 millón heroína u otro opioide ilícito. Los opiáceos siguen representando la mayor parte de los daños atribuidos al consumo de drogas ilícitas, con presencia de opioides, a menudo en combinación con otras sustancias (opioides, alcohol y psicofármacos), en tres cuartas partes de las sobredosis mortales notificadas en 2020. Es importante tener en cuenta que la mayoría de las personas con problemas de drogas usan varias sustancias. Continuamente emergen nuevas sustancias psicoactivas. Esta complejidad se asocia a problemas de salud mental y autolesiones, la falta de vivienda, la delincuencia juvenil y la explotación de personas y comunidades vulnerables. Las figuras 1, 2 y 3 el impacto actual del mercado de drogas sobre la población (/www.emcdda.europa.eu/publications/edr/trends-developments/2022_en).
+
+En la valoración de las drogodependencias, en España se tienen en cuenta también los siguientes factores (https://pnsd.sanidad.gob.es/profesionales/sistemasInformacion/informesEstadisticas/pdf/2021OEDA-INFORME.pdf):
+- Tratamiento por consumo de drogas
+- Urgencias hospitalarias en consumidores de drogas
+- Mortalidad relacionada con drogas
+- Infecciones en consumidores de drogas
+- Consumo problemático de drogas
+- Sistema de Alerta Temprana de drogas que irrumpen en el mercado.
+
+Teniendo en cuenta la importancia del uso y abuso de sustancias y sus implicaciones para la salud, es necesario tener sistemas de procesamiento del lenguaje que sean capaces de extraer información sobre el consumo de los pacientes en textos clínicos.
+
+SNOMED-CT:
+Para poder aprovechar al máximo la información extraída, es importante que se haga una normalización del contenido a un vocabulario controlado. En este corpus, las entidades manualmente anotadas en los textos son normalizadas a identificadores de la ontología SNOMED CT. SNOMED está diseñada para la codificación de textos clínicos y contiene multitud de conceptos directa e indirectamente relacionados el uso de sustancias, por lo que consideramos que es adecuada para esta tarea. Utilizaremos la versión más reciente de SNOMED CT en el Spanish Edition y, cuando sea necesario, el International Edition.
+
+Alcance de la guía:
+Esta guía ha sido formulada para la anotación y normalización exhaustiva de uso y abuso de sustancias en la literatura biomédica, casos clínicos publicados e informes médicos reales. Para ello, se han utilizado documentos de diferentes disciplinas médicas con el fin de asegurar que estuvieran relacionados con el ámbito del corpus y al tipo de estructura y contenido que es relevante para procesar el contenido clínico. El esquema de anotación de las guias está parcialmente basado en las guías de anotación del corpus SHAC, con adaptaciones mínimas.
+
+Es importante conocer los tipos de sustancias que existen, así como su cuantificación y las vías por las que se consumen. La siguiente tabla caracteriza los tipos de sustancias principales:
+
+TABLA 1. CARACTERIZACIÓN DE LAS PRINCIPALES SUSTANCIAS
+
+[TABACO]
+Descripción: El tabaco es una sustancia que se obtiene principalmente del procesamiento de la planta Nicotiana tabacum.
+Vía: Suele consumirse inhalado, ya sea en cigarrillos liados o industriales o en pipa, aunque también puede mascarse.
+Cuantificación: El consumo de tabaco suele medirse en cigarrillos/día y paquetes/año.
+
+[VAPING]
+Descripción: El vaping consiste en el uso de cigarrillos electrónicos con los cuales se inhala vapor en lugar de humo.
+Aunque el vaping no se refiera a una sustancia sino a un método de consumo, lo incluimos junto al tabaco porque consideramos que su forma de consumo, consideraciones sociales y lenguaje usado son suficientemente similares.
+Vía: Inhalada.
+Cuantificación: -
+
+[ALCOHOL]
+Descripción: Uso y abuso en el consumo de bebidas alcohólicas de distinta concentración.
+Vía: Oral.
+Cuantificación: UBE (unidades de bebida estándar; 1 UBE equivale 10 g de etanol). También copas, botellas, latas, ...
+
+[CANNABIS]
+Descripción: El cannabis (también marihuana, hachís) es una sustancia psicotropa que se obtiene del cultivo de Cannabis sativa.
+Vía: Fumada, ingerida.
+Cuantificación: UPE (unidad de porro estándar), porros, gramos, ...
+
+[PSICOFÁRMACOS]
+Descripción: Sustancias de uso médico para mejorar trastornos y enfermedades.
+Los psicofármacos que forman parte del tratamiento indicado por profesionales de la salud no se anotan, solo si hay un abuso claro
+Vía: Cualquiera, en general oral.
+Ejemplos: Opioides, ansiolíticos, sedantes, estimulantes: morfina, oxicodona, anfetaminas, alprazolam
+
+[AGONISTAS/ANTAGONISTAS OPIÁCEOS]
+Descripción: Utilizados para tratar la dependencia a opiáceos: metadona, buprenorfina, naloxona, y combinaciones de éstos
+Vía: Oral, también intravenosa, supositorios y otras
+Ejemplos: Metadona, muñeca, chiste, jungo (nombres de calle)
+
+[OTRAS DROGAS]
+Descripción: Sustancias que van apareciendo en el mercado de drogas, incluída la inhalación de pegamento/colas.
+Vía: Oral, inhalada, fumada, intravenosa, ...
+Ejemplos: Cocaína, heroína, ketamina, cristal, spice, cannabinoides sintéticos, marihuana sintética, miau miau, fl akka, superman, catinonas, mefedrona, derivados de los fentanilos, metoxetamina, NBOMe, ayahuasca, kratom, pegamento, colas, anabolizantes, esteroides, ...
+También algunos fármacos opioides si se especifica que se abusa de ellos (ej: buprenorfina/naloxona).
+
+El Corpus ToxHabits:
+El corpus ToxHabits ha sido anotado y normalizado por dos especialistas en biología, junto con el apoyo de una médico, quien se encargó también de revisar las menciones y sus códigos asociados para llegar a una versión final.
+
+Antes de comenzar la anotación, se creó un primer borrador de estas guías basándonos en trabajos previos en el dominio. Las guías se refinaron mediante varias rondas de inter-annotator agreement (IAA) consistentes en la anotación paralela de un 15% del corpus. Tras varias rondas, se llegó a una puntuación de IAA total (calculado como el pairwise agreement entre dos anotadores independientes) de 0.948 para los marcadores (triggers) y de 0.832 para los argumentos.
+
+Durante todo el proceso de anotación del corpus tuvo lugar una discusión continua sobre el contenido del corpus, especialmente sobre casos difíciles y ambiguos, con el objetivo de conseguir la mayor calidad posible y refinar lo máximo posible estas guías.
+
+Para garantizar el aprovechamiento de las menciones del corpus, se ha utilizado la terminología SNOMED-CT para asignar un identificador a las anotaciones. Debido a diversos motivos (principalmente, el contenido de temporalidad de algunas etiquetas) no todos los tipos de etiquetas se han normalizado. Referimos al apartado 4 para más detalles sobre la normalización.
+
+El resto de esta guía está estructurado como sigue: el apartado 2 describe en detalle la tarea de anotación de uso de sustancias (incluyendo la lista de etiquetas posibles y su explicación); el apartado 3 describe las reglas a seguir para el etiquetado y el apartado 4 explica cómo debe realizarse la normalización.
+
+--- 2. ANOTACIÓN DE USO DE SUSTANCIAS ---
+El objeto de esta tarea es la extracción de la información relacionada con el uso y abuso de sustancias nocivas en casos clínicos. Se anotarán sólo menciones directas al consumo de sustancias por parte del paciente y otras personas que puedan aparecer en la historia clínica. No incluiremos menciones de enfermedades o problemas causados por el consumo.
+
+Etiquetado de eventos:
+La extracción de información relativa al consumo de sustancias en textos biomédicos es muy heterogénea y puede encontrarse dispersa en los casos clínicos. Siempre que se encuentre, debemos tener en cuenta la sustancia de la que se habla, la cantidad que se toma, la manera de tomarla, y las características temporales (si el consumo es actual, de cuánta duración, cuándo se dejó, etc).
+
+En este caso, extraeremos esta información mediante la anotación de eventos. Los eventos indican que está ocurriendo o ha ocurrido una acción (en nuestro caso, uso de sustancias). De este modo, podemos detectar si en una frase aparece el tipo de información que buscamos, y también extraer información asociada a este evento.
+
+Cada evento está formado por un marcador (en inglés, trigger) y una serie de argumentos, breves entidades relacionadas con el evento. El marcador es una o varias palabras (normalmente un verbo o sintagma nominal) que indica que en la frase se está hablando de uso de sustancias. Por ejemplo: los sustantivos tabaco y fumador o el verbo fumar nos indican que se está hablando del uso de esta sustancia. Dependiendo del tipo de sustancia, distinguiremos varios triggers: alcohol, tabaco, cannabis y drogas (general).
+
+Los argumentos, entidades que caracterizan al evento, están formadas por diferentes tipos de información contextual (como la sustancia que se consume o la fecha de consumo). Desde el marcador se debe extender una relación hasta cada una de las entidades que le acompañe.
+
+Etiquetas disponibles:
+Etiquetaremos cuatro tipos de marcadores de eventos distintos: tabaco, cannabis, alcohol y (otras) drogas (incluye psicofármacos y resto de sustancias ilícitas). Las reglas y argumentos son las mismas para los cuatro tipos, aunque cada uno tiene sus peculiaridades. Por ejemplo, en los eventos de alcohol raramente se hablará de por qué vía se consume, mientras que en otras drogas es muy común. Dentro de cada tipo entran los siguientes tipos de consumos:
+● Tabaco: consumo de tabaco (ya sea en cigarrillo, pipa, ...) y vapeo
+● Cannabis: marihuana, hachís, cannabidiol o CBD
+● Alcohol: consumo de bebidas con alcohol
+● Drogas: el resto de sustancias recreativas, incluyendo cocaína, heroína, psicodélicos y el resto de drogas que aparecen en la Tabla 1. Algunas consideraciones extra sobre este tipo de evento:
+○ Incluimos dentro de esta categoría las sustancias estimulantes, incluyendo bebidas energéticas y cafeína.
+○ Los psicofármacos solo se anotan cuando queda claro que hay un abuso y no están prescritos por profesionales.
+○ Anabolizantes y esteroides también se anotan cuando se usan sin receta médico con el objetivo de mejorar el rendimiento deportivo.
+○ Los agonistas/antagonistas de opiáceos como metadona, naloxona y buprenorfina se anotarán prácticamente siempre, por qué indicarán 1. que la persona se está tratando de una adicción o 2. que existe un abuso por no disponer de otros opioides.
+
+La Tabla 2 muestra una lista completa de los argumentos que pueden acompañar a un marcador. Puesto que esta tarea de anotación está basada en las del corpus SHAC, mantenemos el nombre original de las etiquetas en inglés y proponemos una traducción para cada una. En la herramienta brat aparecerá solo el nombre en inglés.
+
+TABLA 2. TIPOS DE ARGUMENTOS
+
+- [STATUSTIME] (ESTADO): Indica la temporalidad del consumo de la sustancia.
+Es la única entidad para la que hay que elegir una subclase, que puede ser: current (actual), past (pasado), none (ninguno) o AWSE (associated with someone else; no asociado con el paciente). También es la única entidad de este tipo que hay que anotar obligatoriamente.
+Por ejemplo: “niega” (none), “activo” (current), “en el pasado” (past)
+- [TYPE] (SUSTANCIA): El tipo de sustancia que se consume. Responde a la pregunta “¿qué?”
+Por ejemplo: “tabaco”, “porros”, “pasta base”
+- [METHOD] (VÍA): La manera de consumir la sustancia. Responde a la pregunta “¿cómo?”
+Por ejemplo: “inhalado”, “mascado”, “liado”, “vía parenteral”
+- [AMOUNT] (CUANTIFICACIÓN): La cantidad de sustancia tomada. Responde a la pregunta “¿cuánto?”
+Por ejemplo: “ocho cigarrillos”, “15 paquetes”
+- [FREQUENCY] (FRECUENCIA): La frecuencia con la que se consume una sustancia. Responde a la pregunta “¿cada cuánto tiempo?”
+Por ejemplo: “cada día”, “al año”
+- [DURATION] (DURACIÓN): La cantidad de tiempo durante la que se ha tomado la sustancia. Responde a la pregunta “¿durante cuánto tiempo?”
+Por ejemplo: “en los últimos 7 años”, “desde que empezó la universidad”, “desde la juventud”
+- [HISTORY] (FECHA): El momento en el que se deja de tomar la sustancia. Responde a la pregunta “¿hasta cuándo?”
+Por ejemplo: “hace 3 años”, “en 2007”
+
+La segunda fase de la tarea está centrada en la normalización de las entidades marcadas y se hará en un segundo paso. Las entidades de tipo temporal (frequency, duration y history) no se normalizarán en este corpus, sino que serán tratadas a posteriori con herramientas de normalización temporal.
+
+El proceso de anotación
+La tarea tiene dos partes: anotación y normalización. La anotación consiste en el marcado directamente en el texto de entidades siguiendo las reglas de la sección 3 (“Reglas de Anotación”). Para ello, utilizaremos la herramienta de anotación online brat.
+
+La anotación no se hace sobre un texto vacío, sino sobre un texto con sugerencias de anotación que el anotador podrá aceptar, modificar o eliminar. Estas sugerencias provendrán de nuestros NER entrenados en estas categorías, además de las anotaciones ya realizadas en el corpus hasta el momento. Las sugerencias no son equivalentes a las guías de anotación, que siempre tomarán precedencia. Hay que tener en cuenta que hay muchas entidades que se tendrán que anotar que no estarán sugeridas, y que muchas sugerencias se tendrán que modificar o eliminar.
+
+En caso de duda del anotador, se aconseja consultar recursos externos. Recomendamos usar sobre todo el navegador de SNOMED-CT, así como Wikipedia u otras páginas web especializadas como MedlinePlus. Para abreviaturas en castellano recomendamos utilizar el Diccionario de Siglas Médicas de la Sociedad Española de Documentación Médica (SEDOM) (http://diccionario.sedom.es/).
+
+Los ejemplos de las secciones que siguen usan el siguiente código de colores: las anotaciones correctas relacionadas con cada regla se marcan en azul; las anotaciones correctas que no tienen relación con la regla se marcan en negrita; en rojo se marcan las anotaciones incorrectas. Para facilitar la explicación de algunas reglas, también es posible que algunos ejemplos aparezcan en forma de capturas de pantalla de la interfaz de brat.
+
+--- 3. REGLAS DE ANOTACIÓN ---
+En esta sección se detallan las reglas y convenciones a seguir para hacer el marcado textual de eventos y entidades relacionados con el uso de sustancias.
+
+Esta sección está estructurada de la siguiente forma:
+● 3.1 Reglas generales
+● 3.2 Reglas por tipo de entidad
+En el anexo I se incluye una versión resumida de las etiquetas y reglas del corpus.
+
+3.1 Reglas generales
+En este apartado se explican algunos aspectos básicos relacionados con la anotación en forma de reglas. Estas reglas afectan a todos los tipos de etiquetas.
+
+TABLA 3. REGLAS GENERALES
+
+[G1] [anotaciones]
+Se anotan en el corpus todas las menciones directas al uso de sustancias, tanto positivas como negativas (p. ej.: “no consume drogas”). Las menciones que incluyan incertidumbre (p. ej.: “probable uso de tóxicos”) se anotan de manera normal.
+No se anotan menciones que no incluyan este tipo de información incluso si permiten inferir que el paciente es consumidor de sustancias (p. ej., cirrosis alcohólica) [ver regla G14].
+Tampoco anotamos menciones donde se hable de consumo de forma hipotética, se hagan recomendaciones o se hable del futuro (p. ej. “el uso de cannabis cada vez crece más...”, “se le recomienda no seguir con el uso de cannabis”).
+
+[G2] [anot-mínima]
+Solo hay dos etiquetas obligatorias para cada anotación de un evento: trigger y estatus. En cada evento debe haber obligatoriamente una de estas etiquetas (solo una). El resto son opcionales y se anotarán solo si aparecen en el texto.
+
+[G3] [alcance]
+Las anotaciones textuales deben estar formadas únicamente por palabras completas, evitando incluir puntuación excepto que sea absolutamente necesario.
+
+[G4] [anot-verbos]
+Cuando se anote un verbo debe anotarse la forma verbal completa, incluyendo verbos auxiliares como “haber”.
+[ejemplos] 1. había consumido
+
+[G5] [multi-frase]
+Aunque la mayoría de anotaciones de eventos ocurren dentro de la misma frase, está permitido hacer anotación entre frases solo en el caso de que en la frase anterior o siguiente a un evento aparezca información relevante sin un marcador propio cerca.
+[ejemplos] 2. Tabaco: de 2 a 3 paquetes al día durante 40 años. Lo dejó hace 5 meses.
+
+[G6] [multi-evento]
+Puede haber más de un marcador en una misma frase siempre que cada uno pertenezca a un evento distinto.
+[ejemplos] 3. Fuma dos paquetes al día y bebe un litro de vino todas las noches
+
+[G7] [multi-argument]
+Un mismo evento puede tener asociado más de un argumento del mismo tipo, excepto del tipo StatusTime (si tenemos dos StatusTime, lo más probable es que debamos hacer dos eventos distintos).
+[ejemplos] 4. Exfumador con inicio en la juventud y hasta hace 13 años, [10 cigarrillos] al día (ICAT [23 paquetes/año]).
+
+[G8] [multi-argument-2]
+Al revés que en la anterior, un mismo argumento puede estar asociado a más de un evento distinto.
+
+[G9] [sustancias-multi]
+Si aparecen listadas varias sustancias, normalmente cada una debe tener su propio evento (ver reglas SUST-2 y SUST-3).
+
+[G10] [psicofármacos]
+Los psicofármacos se anotarán únicamente cuando sea obvio en el texto que (1) no se toman bajo prescripción médica (anotaremos siempre el abuso de barbitúricos, de morfina, etc; no anotaremos la morfina si se toma con fines terapéuticos, por ejemplo en el caso de dolor neuropático o por infiltración tumoral); y (2) cuando se utilicen con fin autolítico. No se anotarán fármacos no capaces de crear psicoadicción, aunque se utilicen con fines autolíticos.
+[ejemplos] 7. Fallece a los tres días de la ingesta de 65 mg de lorazepam.
+8. Requiere vaciado gástrico tras la ingesta de 30 comprimidos de metotrexate.
+
+[G11] [mismo-tipo]
+Si aparecen dos tipos de argumentos del mismo tipo juntos en el texto se pueden anotar como una sola entidad mientras no haya palabras relacionadas por medio (con excepción de los tipos de sustancias, ver reglas G9, SUST-2).
+[ejemplos] 9. dos veces a la semana
+
+[G12] [otras-entidades]
+De manera general, anotaremos estas palabras y frases incluso si aparecen por sí solas en el texto sin ninguna referencia a alguna droga en concreto pero en un contexto de consumo.
+- consumo
+- adicción
+- conducta adictiva
+
+[G13] [comportamiento]
+De manera general, no anotaremos como argumentos adjetivos que describan comportamientos relacionados con el abuso: compulsivo, abusivo, ... (excepción: “crónico”, ver regla FDH-7). Tampoco incluimos palabras como “concomitante”.
+
+[G14] [enfermedad]
+No anotaremos enfermedades o problemas en general relacionados con o derivados del consumo de drogas (exceptuando la palabra “intoxicación” y “dependencia”, que tomaremos como sinónimo de “consumo” -> regla STAT-3)
+[ejemplos] 10. cirrosis hepática
+11. hiperémesis cannabinoide
+
+[G15] [infancia, accidental]
+La intoxicación por drogas o psicofármacos en la infancia y accidental se anotarán también.
+[ejemplos] 12. Lactante de 10 meses trasladada desde otro hospital por sospecha de ingesta de hachís de forma accidental.
+
+[G16] [acrónimos, abreviaturas]
+Los acrónimos se anotarán separadamente de su forma larga cuándo ésta aparezca. Las abreviaturas también se anotarán.
+[ejemplos] 13. Ingiere 20 pastillas de BZD [primera mención] (benzodiacepinas) [segunda mención]
+14. Mezcla cocaína con benzos y alcohol
+
+
+3.2 Reglas por tipo de entidad
+
+En este apartado se explican las reglas para cada entidad.
+
+REGLAS PARA TRIGGERS (MARCADORES)
+
+[TRIG-1] [contenido]
+El marcador es la parte de un texto que nos hace saber que se está hablando de un consumo de sustancias. Suele estar formado por entre una y cuatro palabras que hacen referencia a tipos o nombres de sustancias o al consumo en general.
+Para elegir qué marcador anotamos seguiremos la siguiente jerarquía:
+1. Tipos generales (alcohol, tabaco, droga) y específicas (heroína, cocaína, hachís) de sustancias
+2. Sustantivos y sintagmas nominales que hagan referencia al consumo (consumidor, ingesta, fumador).
+3. Verbos que hagan referencia al consumo (fumar, beber).
+
+[TRIG-2] [alcance]
+Al anotar sintagmas nominales y verbales que hagan referencia al consumo (puntos 2 y 3 en la jerarquía de la regla TRIG-1), incluiremos el tipo de sustancia si es una sola, así como posibles adjetivos (habitual).
+[ejemplos] 17. zzz
+
+[TRIG-3] [solape]
+En ocasiones, el marcador puede corresponder al mismo trozo de texto que una entidad contextual.
+[ejemplos] 18. zzz
+
+[TRIG-4] [marc-comunes-tabaco]
+Estos son algunos de los marcadores comunes que anotaremos para el trigger TABACO:
+- “fumador@”
+- “fumar”
+
+[TRIG-5] [marc-comunes-alcohol]
+Estos son algunos de los marcadores comunes que anotaremos para el trigger ALCOHOL:
+- “bebedor@”
+- “beber”
+
+[TRIG-6] [marc-comunes-droga]
+Estos son algunos de los marcadores comunes que anotaremos para el trigger DROGA:
+- tipos de sustancias generales
+- nombres de sustancias concretas
+- usuari@, consumidor@
+- politoxicóman@
+- intoxicad@ (si la causa son drogas)
+- palabras comunes: drogad@, colocad@, empastillad@
+[ejemplos] 21. exconsumo de tóxicos
+
+[TRIG-7] [hab-tox]
+La frase “hábitos tóxicos” se puede anotar como marcador de tipo DROGA solo en el caso de que no aparezca ningún otro tipo de información sobre consumo de sustancias.
+Por ejemplo, si el texto dice “No hábitos tóxicos” podremos anotarlo. Sin embargo, si el texto dice: “Hábitos tóxicos: fumador, consumidor de cocaína, ...” no lo anotaremos.
+
+[TRIG-8] [desintoxicación]
+Las menciones a desintoxicaciones y deshabituaciones se pueden anotar con el trigger DROGA si no existe alternativa mejor. En estos casos el StatusTime será normalmente “current” (ver regla STAT-9).
+
+[TRIG-9] [pruebas]
+Las menciones a resultados positivos y negativos de pruebas para detectar sustancias en sangre/orina/etc. se anotarán también con el trigger correspondiente (normalmente CANNABIS o DROGA). En estos casos marcaremos como StatusTime la palabra “positivo” y “negativo”, así como la mención a la prueba si estas palabras no aparecen tal cual.
+
+[TRIG-10] [otras-sustancias]
+Si se mencionan sustancias de manera muy general (“otras drogas”, “resto de sustancias”, “nuevos tóxicos”) lo anotaremos con el trigger DROGA e incluiremos en la mención los determinantes o sintagmas que acompañan a la palabra de sustancia.
+Del mismo modo que en la regla TRIG-7, esta regla solo se aplica cuando no se especifique cuáles son las sustancias a las que se refiere la frase. Es decir, no se aplica en frases del estilo: “Resto de sustancias: cocaína los fines de semana, cannabis a diario”.
+[ejemplos] 24. Consumo perjudicial de alcohol y otros tóxicos
+
+[TRIG-11] [comercial]
+Anotaremos las sustancias que aparezcan en su forma comercial (fármacos, marcas de tabaco, de licores, etc.).
+
+REGLAS PARA STATUSTIME (ESTADO)
+
+[STAT-1] [contenido]
+La etiqueta StatusTime se usa para marcar la temporalidad del consumo de sustancias.
+Hay cuatro subtipos:
+- none (no hay ni ha habido consumo)
+- current (hay consumo en la actualidad)
+- past (ha habido consumo anteriormente)
+- AWSE (associated with someone else, existe consumo pero no está asociado con el paciente)
+Las anotaciones de esta categoría deben ser el trozo de texto más corto que permita distinguir entre cada subtipo y preferiblemente incluirán un verbo. Muchas veces se solapará con la anotación de la etiqueta trigger.
+
+[STAT-2] [none]
+Anotaremos como none las negaciones en general siempre que se refieran al paciente y no haya referencias al pasado o presente (en cuyo caso normalmente será past, ver regla STAT-10).
+Para la subclase none anotaremos en este orden:
+1. Conjunciones, preposiciones y adverbios de tiempo negativos (no, ni, nunca, sin). No incluiremos por regla general palabras extra.
+2. Verbos de negación (negar, rechazar)
+
+[STAT-3] [current]
+Para la subclase current anotaremos, en este orden:
+1. Sustantivos que describan a la persona que consume (fumador, ...)
+2. Verbos afirmados en presente con relación al consumo (fuma, toma, consume, utiliza, ...). Se pueden incluir verbos en pasado si el caso clínico está narrado mayoritariamente utilizando este tiempo verbal.
+3. Palabras como “intoxicación” que hacen referencia directa al consumo.
+4. Complementos circunstanciales de tiempo (actualmente)
+5. Adjetivos y adverbios que referencien el consumo por sí solos (activo, habitual, ocasional)
+Entran dentro de esta categoría tanto consumidores intermitentes como aquellos que hayan sufrido recaídas.
+
+[STAT-4] [past]
+Para la subclase past anotaremos en este orden:
+1. Sustantivos con el prefijo “ex-” y sintagmas nominales que indiquen que ya no se consume en general (ausencia de nuevo consumo, antecedentes, abstinencia, ...).
+2. Verbos en pasado en relación al consumo (ha experimentado, tomaba, solía fumar, era, ...) 
+3. Complementos circunstanciales de tiempo (anteriormente, en el pasado)
+
+[STAT-5] [AWSE]
+Para la subclase AWSE podremos anotar:
+- Nombres de relaciones familiares y que se refieran a personas que no sean el paciente en general.
+- Pronombres y adjetivos co-referentes a menciones de personas que están muy lejos en el texto de la mención que estamos anotando (p. ej. “un hermano... otro consume drogas”)
+En el caso de que podamos anotar más de una entidad StatusTime junto a AWSE refiriéndose al mismo evento, el StatusTime AWSE toma prioridad y solo anotaremos este. En el caso de que la entidad AWSE esté negada, incluiremos en la mención la parte negada (ver tercer ejemplo).
+
+[STAT-6] [antecedentes]
+La frase “antecedentes de...” más menciones de consumo puede ser ambigua, ya que podría referirse tanto a un consumo que continúa en el presente como a uno pasado. Por convención, anotaremos siempre estos casos como past.
+
+[STAT-7] [tiempo]
+En algunos casos, el único StatusTime posible será una expresión temporal que puede ser ambigua sobre si el consumo continúa en la actualidad (current) o es completamente algo del pasado (past). Por ejemplo: “hace una semana”, “el mes pasado”, ...
+Por convención, anotaremos todas las fechas hasta los seis meses como “current” en los casos ambiguos.
+
+[STAT-8] [abstinencia]
+Cuando haya menciones a abstinencia de sustancias, entenderemos que es porque ha habido un consumo anterior que no sigue en la actualidad. Por ello, lo anotaremos con StatusTime past.
+[ejemplos] 40. Mantenía abstinencia confirmada con exámenes de orina semanales
+
+[STAT-9] [desintoxicación]
+Cuando se hable de procesos de desintoxicación y deshabituación de sustancias, excepto que quede claro que es algo que ocurrió en el pasado lejano lo anotaremos con StatusTime present.
+[ejemplos] 41. Varios ingresos en unidades de agudos para desintoxicación de heroína
+
+[STAT-10] [negaciones-y-pasado]
+A veces encontraremos frases con negaciones en las que también se dice que ha habido consumo en el pasado, por lo que deberemos anotarlas como past. Normalmente, este tipo de frases incluyen algún tipo de expresión temporal que puede hacer referencia bien al pasado o al momento actual.
+Incluiremos también en la mención en estos casos, si se puede, la expresión temporal (último punto de la jerarquía de past, regla STAT-4) + la partícula negativa.
+[ejemplos] 42. En este momento no es fumador
+43. No bebe desde hace dos años
+
+[STAT-11] [excepto, el resto]
+Las anotaciones que se incluyan dentro de “el resto”, “excepto” y similares, las excluiremos de la anotación. En el ejemplo 45, anotaremos nicotina y cannabis como present, no anotaremos la mención indicada en rojo porque resulta engañosa.
+[ejemplos] 44. Abstinente de cualquier sustancia de abuso excepto nicotina y cannabis
+
+REGLAS PARA TYPE (SUSTANCIA)
+
+[SUST-1] [contenido]
+La etiqueta type indica el tipo de sustancia concreta que usa el paciente.
+- Para tabaco no anotamos normalmente esta etiqueta, ya que asumimos que la sustancia es tabaco y sería redundante (excepción regla SUST-6).
+- Para alcohol, algunos ejemplos son: vodka, whisky, cerveza, ...
+- Para drogas: cocaína, MDMA, LSD, ...
+- Para cannabis: marihuana, hachís, CBD, ...
+
+[SUST-2] [unicidad]
+Si aparecen varias sustancias distintas seguidas, se anotan por separado aunque algunas se consideren enhancers de otras, por ejemplo, tomar benzodiacepinas junto con una bebida alcohólica. Normalmente cada una constituirá su propio evento (ver regla G9).
+
+[SUST-3] [mezclas]
+Como excepción a la regla anterior, si aparece alguna sustancia que consideramos tóxica mezclada con y tomada junto con alguna sustancia que por sí sólo no es una droga ni un fármaco psicotropo ni produce ningún tipo de adicción, pero que actúa como enhancer (por ejemplo, el amoníaco) se debe anotar como una sola entidad.
+Por ejemplo, cocaína + amoníaco = un evento (ver ejemplo), pero cocaína + heroína o cocaína + cafeína = dos eventos .
+
+[SUST-4] [generales]
+No anotamos como Type nombres generales de sustancias, que suelen corresponder al tipo de Trigger utilizado (e.g. tabaco, alcohol, cannabis, droga).
+
+[SUST-5] [clasificación]
+No se incluyen en esta etiqueta posibles clasificaciones de las sustancias con respecto a su uso (recreacional, ilícito, ...).
+
+[SUST-6] [forma]
+Se anotan con esta etiqueta también las formas físicas en la que se consume en la sustancia: cigarrillos, puros, porros, copas, ...
+
+[SUST-7] [forma-informal]
+En ocasiones encontraremos algunas sustancias para las que se menciona su composición química o compuesto principal junto a una manera más común o informal de llamarlas (muchas veces entre paréntesis). Estos casos se anotan siempre separadamente, cómo si se tratara de dos entidades distintas. Por ejemplo, en el caso de: sulfato de anfetamina (speed), tendremos una primera mención=sulfato de anfetamina; y una segunda=speed. Excepción: los fármacos que están formulados conjuntamente en forma de tableta, cápsula, etc., se anotarán de forma única. Por ejemplo, buprenorfina/naloxona=1 sola mención; ingiere tabletas de barbitúricos (=primera mención) y benzodiacepinas (=segunda mención).
+
+REGLAS PARA METHOD (VÍA)
+
+[METH-1] [contenido]
+La etiqueta method indica cómo toma la sustancia el paciente.
+
+[METH-2] [tabaco]
+Con el trigger “tabaco” se asume que la vía es inhalada, por lo que solo se anotarán métodos alternativos como masticado o vapeado.
+
+[METH-3] [alcohol]
+Con el trigger “alcohol” se asume que la vía es oral siempre, por lo que no es necesario anotar esta etiqueta excepto que se especifique algún otro método.
+
+[METH-4] [cannabis]
+Con el trigger “cannabis” sí que debemos anotar la vía, ya que existen distintas formas distintas de tomar la sustancia: inhalada, oral (comido), ...
+
+[METH-5] [drogas]
+Con el trigger “drogas” encontraremos una mayor variedad de vías: fumado, inhalado, inyectado, ...
+También encontraremos algunas siglas que representan vías de consumo y que es importante conocer:
+- UDVP: usuario de drogas por vía parenteral
+
+[METH-6] [otros-aspectos]
+Incluiremos también en esta etiqueta las características ambientales/contextuales del consumo como: activo, pasivo, social,
+
+REGLAS PARA AMOUNT (CUANTIFICACIÓN)
+
+[CUAN-1] [contenido]
+La etiqueta amount indica la cantidad de sustancia que ha tomado el paciente. Suele expresarse mediante un número más un sustantivo.
+
+[CUAN-2] [cualitativos]
+Incluímos en esta etiqueta descripciones cualitativas del consumo: leve, moderado, importante, ...
+
+[CUAN-3] [frecuencia]
+Aunque muchas veces aparezcan en conjunto, la información sobre la frecuencia de uso no se debe anotar junto a la cantidad si no pertenece a una medida concreta (ver regla CUAN-4). En su lugar, debemos usar la etiqueta frecuencia.
+
+[CUAN-4] [estándar]
+A modo de excepción de la regla anterior, sí que se anotan con esta etiqueta las medidas estándar de consumo (que a veces pueden aparecer como siglas).
+Para tabaco: paquetes-año, p/y (pack/year), paquetes/día, cigarrillos/día y variantes.
+Para cannabis: UPE (Unidad de Porro Estándar)
+Para alcohol: UBE (Unidad de Bebida Estándar)
+
+[CUAN-5] [sustancia]
+Otra etiqueta que aparece muy a menudo junto a la cantidad es la sustancia. Si la sustancia aparece ya medida (p. ej. botellas o latas para bebida) no incluiremos la sustancia en la mención.
+[ejemplos] 57. Tres botellas de vino
+
+[CUAN-6] [concentración]
+No anotaremos como amount la concentración en sangre de sustancias que puede aparecer en pruebas de laboratorio.
+[ejemplos] 58. Se realizó examen toxicológico en sangre que fue positivo para cocaína en concentración de 52 ng/ml.
+
+[CUAN-7] [cuantificador]
+Cuando la cantidad vaya acompañada de algún tipo de cuantificador (“alrededor de”, “en total”, “más o menos”) se debe incluir en la mención.
+[ejemplos] 59. A la semana consume aproximadamente seis gramos en total de cocaína.
+
+[CUAN-8] [no-medible]
+También anotaremos las expresiones que hacen referencia a cantidades de manera indeterminada (“indeterminada”, “no medible”, “no mensurable”).
+
+[CUAN-9] [dinero]
+A veces encontraremos frases en las que la cantidad de una droga se mide en dinero. Estos casos se anotan también como cantidad.
+[ejemplos] 60. Ha reconocido un gasto de 10-15 euros diarios en cannabis
+
+REGLAS PARA FREQUENCY, DURATION, HISTORY (FRECUENCIA, DURACIÓN, FECHA)
+
+[FDH-1] [contenido]
+La etiqueta frequency indica la frecuencia de uso de una sustancia, la etiqueta duration la cantidad de tiempo que se ha consumido y la etiqueta history el momento temporal en el que se dejó de consumir.
+Las tres son entidades de tipo temporal y por eso las agrupamos en esta tabla.
+
+[FDH-2] [preposiciones]
+La gran mayoría de anotaciones de estas categorías son expresiones temporales que van introducidas por otras palabras: una preposición (en, durante), adjetivos de cuantificación (cada), ... Estas palabras deben incluirse en la mención si son necesarios para capturar el significado.
+En el caso de adjetivos y adverbios de frecuencia, que tienen significado por sí mismos, los anotaremos solos (ver regla FDH-8).
+
+[FDH-3] [abreviaturas]
+Debido a su gran frecuencia, en el dominio biomédico encontraremos determinadas formas abreviadas para hablar de temporalidad. Por ejemplo: “/día” significa “al día” (frecuencia) o “x 40 años” significa “durante 40 años” (duración). Este tipo de abreviaturas también deben anotarse.
+
+[FDH-4] [edades]
+Las menciones que hablen sobre la edad o etapa de la vida en la que se empezó a consumir una sustancia se anotan como duration.
+
+[FDH-5] [partes-día]
+Las partes del día (mañana, tarde, noche, etc.) pueden ser argumentos de frecuencia cuando se habla de actividades que ocurren siempre en ese momento.
+
+[FDH-6] [dur-vs-hist]
+Al etiquetar menciones de uso de sustancias en el pasado (es decir, con la etiqueta StatusTime[past]), hay menciones temporales que son ambiguas y podrían etiquetarse tanto como duration como history. En caso de duda, priorizaremos siempre la etiqueta history.
+
+[FDH-7] [crónico]
+La palabra “crónico” la anotaremos con la etiqueta duration.
+
+[FDH-8] [adjetivos]
+Anotaremos adjetivos de frecuencia dentro de la categoría frequency: “ocasional”, “puntual”, ... Estas palabras se deben anotar incluso si forman parte del StatusTime.
+
+[FDH-9] [fechas]
+Las fechas específicas en el texto se anotan con la etiqueta de Duración.
+
+--- 4. REGLAS DE NORMALIZACIÓN ---
+La segunda parte de la anotación del corpus consiste en asociar cada mención anotada a uno o más códigos de SNOMED-CT. Solo normalizaremos las entidades de tipo no-temporal (es decir, excluimos StatusTime, Frequency, Duration y History).
+
+Para la normalización utilizaremos SNOMED CT, con el browser internacional en su última Spanish Edition (30 Abril, 2023). Cuando no encontremos un término en castellano, intentaremos buscarlo en la última versión (hay una nueva cada mes) de la International Edition.
+
+En este apartado de las guías se proporcionan unas directrices generales para realizar la normalización (sección 4.1) y se establecen unos códigos sugeridos que usar para menciones frecuentes o especialmente complejas (sección 4.2).
+
+4.1 Reglas generales
+Estas son las reglas generales a seguir mientras se realiza el proceso de normalización manual:
+
+REGLAS GENERALES DE NORMALIZACIÓN
+
+[G1] [pre-coordinado]
+Intentaremos usar siempre conceptos pre-coordinados, es decir, cada mención puede tener solo un código.
+Como excepción, algunas anotaciones compuestas (p. ej. “esguince de tobillo y rodilla”) incluirán más de un concepto dentro y obligatoriamente necesitarán más de un código. Cuando incluyamos uno de estos códigos deberemos marcar la columna “is_composite” para ese concepto y unir los dos códigos con un signo de suma (“+”).
+
+[G2] [orden-búsqueda]
+Se debe intentar seguir este orden a la hora de elegir un concepto al hacer búsquedas:
+1. Seleccionar el concepto SNOMED CT cuyo nombre preferido coincide con la mención.
+2. Seleccionar el concepto SNOMED CT con un sinónimo que coincide con la mención.
+3. Seleccionar el concepto más específico que describe correctamente la mención.
+4. Seleccionar el concepto hiperónimo (más general) que lógicamente mejor describe la mención.
+
+[G3] [relación-semántica]
+Al asignar un código, deberemos marcar la relación semántica entre el código y el concepto original. Las posibles relaciones son:
+- EXACT: la mención y el código se corresponden exactamente
+- NARROW: el código es más general que la mención
+- NOCODE: no se ha podido asignar código a la mención
+También se deben marcar las menciones que incluyan abreviaturas, las que necesitan contexto para desambiguarse y las que necesitan más de un código.
+
+[G4] [idioma]
+Por defecto, haremos la búsqueda de conceptos en castellano. Sin embargo, puesto que los códigos de SNOMED son válidos en todos los idiomas, si no encontramos algo en castellano podremos hacer la búsqueda en inglés u otro idioma. De manera análoga, en casos especiales se podrá hacer la búsqueda en la versión internacional de SNOMED.
+
+[G5] [clase-semántica]
+Por convención, para cada tipo de entidad solo podremos usar los códigos de unas ramas concretas de SNOMED. Esto nos permitirá reducir el número total de códigos candidatos, asegurarnos de que asignamos un código de la clase correcta y minimizar inconsistencias.
+Si tenemos varios códigos disponibles en distintas ramas permitidas se debe elegir el más adecuado intentando seguir como preferencia el orden de la lista de ramas permitidas.
+Las clases permitidas para cada tipo de entidad se especifican en la siguiente tabla de esta sección.
+
+[G6] [ambigüedad-padre]
+A veces nos encontraremos códigos un poco ambiguos que a priori parecen correctos. Sin embargo, si nos paramos a mirar la estructura de SNOMED y la rama a la que pertenece, veremos que en realidad se hace referencia a otro concepto distinto. Por eso, a la hora de asignar códigos será importante revisar los códigos “padres” y la rama a la que pertenecen.
+
+Como especifica la regla G5 de normalización, cada tipo de entidad tiene una serie de clases semánticas de SNOMED que se deben intentar utilizar. Para cada una de las entidades, establecemos una jerarquía preferente de clases semánticas de SNOMED para aumentar la especificidad y consistencia de la normalización. Es posible que en algún caso tengamos que utilizar alguna otra categoría semántica, pero siempre hay que intentar respetar la jerarquía marcada en la tabla antes de recurrir a otra clase.
+
+CLASES SEMÁNTICAS PERMITIDAS POR TIPO DE ENTIDAD
+Entidad	Clase semántica
+Tobacco (Trigger Tabaco)	Enfermedad, hallazgo, sustancia
+Cannabis (Trigger Cannabis)	Enfermedad, hallazgo, sustancia
+Alcohol (Trigger Alcohol)	Enfermedad, hallazgo, sustancia
+Drug (Trigger Drogas)	Enfermedad, hallazgo, sustancia
+Type (Argumento Sustancia)	Sustancia, Producto, Producto Medicinal
+Method (Argumento Via)	Calificador, hallazgo
+Amount (Argumento Cantidad)	Calificador, hallazgo
+
+4.2 Códigos propuestos
+En esta sección se recopilan algunos códigos que se deben usar para la normalización de menciones específicas. La idea es que sirvan de referencia para menciones muy frecuentes o complejas, de modo que no haya que volver a buscar en menciones ya normalizadas o de nuevo en SNOMED.
+
+Para comenzar, estos son algunos códigos propuestos para los triggers más frecuentes:
+
+CÓDIGOS PARA TRIGGERS MÁS FRECUENTES
+Entidad	Código propuesto en SNOMED CT
+Tabaquismo (smoking)	77176002 |fumador (hallazgo)|
+Vapeo (vaping)	816134008 |vapeo (evento)|
+Consumidor de marihuana	733460004 |usuario de marihuana (hallazgo)|
+Alcoholismo	7200002 |alcoholismo (trastorno)|
+Consumo de alcohol	219006 |bebedor de alcohol (hallazgo)|
+Toma drogas*	417284009 |actual consumidor de drogas (hallazgo)|
+Tomaba drogas*	44870007 |ex consumidor de drogas (hallazgo)|
+Abuso de drogas	26416006 |abuso de drogas (trastorno)|
+Politoxicómano	429299000 |dependencia de múltiples drogas, continua (trastorno)|
+* Drogas: sustancias psicoactivas ilícitas con capacidad de generar dependencia excluyendo alcohol, tabaco y vapeo.
+
+El problema de adicción más comúnmente registrado en la historia clínica es la condición de fumador@. Para normalizar esta condición, SNOMED CT presenta muchas opciones, entre ellas:
+CÓDIGOS PARA TABACO
+Entidad	Código propuesto en SNOMED CT
+Fumador pasivo	43381005 |fumador pasivo (hallazgo)|
+Consume tabaco masticado	81703003 |mastica tabaco (hallazgo)|
+Nunca ha sido fumador	266919005 |nunca fumó tabaco (hallazgo)|
+Tabaquismo (smoking)	77176002 |fumador (hallazgo)|
+Fumador ocasional	428041000124106 |fumador ocasional de tabaco (hallazgo)|
+Fumador leve	160603005 |fumador leve de cigarrillos (1-9 cigarrillos por día) (hallazgo)|
+Fumador moderado	160604004 |fumador moderado de cigarrillos (10-19 cigarrillos por día) (hallazgo)|
+Fumador empedernido	56771006 |fumador empedernido (más de 20 cigarrillos por día) (hallazgo)|
+Fumador excesivo	160606002 |fumador excesivo de cigarrillos (más de 40 cigarrillos por día) (hallazgo)|
+Ex-fumador	8517006 |ex-fumador (hallazgo)|
+Ex-fumador durante menos de 1 año	735128000 |ex-fumador durante menos de 1 año (hallazgo)|
+Ex-fumador durante más de 1 año	48031000119106 |ex fumador durante más de 1 año (hallazgo)|
+Paquetes de cigarrillos-año	401201003 |paquetes de cigarrillos-año (entidad observable)|
+
+En relación al vaping, tenemos:
+CÓDIGOS PARA VAPING
+Entidad	Código propuesto en SNOMED CT
+722499006 |usuario de cigarrillo electrónico (hallazgo)|	1137690000 |nunca usó cigarrillo electrónico (hallazgo)|
+1137692008 |ex usuario de cigarrillo electrónico por más de 1 año (hallazgo)|	1137688001 |ex usuario de cigarrillo electrónico por menos de 1 año (hallazgo)|
+
+En relación al cannabis, tenemos:
+CÓDIGOS PARA CANNABIS
+Entidad	Código propuesto en SNOMED CT
+consume cannabis	733460004 |usuario de marihuana (hallazgo)|
+
+En relación al alcohol, tenemos:
+CÓDIGOS PARA ALCOHOL
+Entidad	Código propuesto en SNOMED CT
+abstemio	105542008 |actualmente no bebe alcohol (hallazgo)|
+ex-alcohólico	82581004 |ex bebedor de alcohol (hallazgo)|
+160579004 |cesó de beber alcohol (hallazgo)|
+300939009 |alcohólico abstemio (hallazgo)|
+alcoholismo/enolismo	7200002 |alcoholismo (trastorno)|
+15167005 |abuso de alcohol (trastorno)|
+284591009 |abuso crónico de alcohol (trastorno)|
+228281002 |bebedor problema (hallazgo)|
+Bebedor social	28127009 |bebedor social (hallazgo)|
+Bebe ocasionalmente	266917007 |bebedor ocasional - menos de 1 unidad por día (hallazgo)|
+228276006 |bebedor ocasional (hallazgo)|
+Bebe a diario	228320001 |bebedor habitual (hallazgo)|
+Bebedor leve
+160575005 |bebedor leve - 1 a 2 unidades por día (hallazgo)|
+Bebedor moderado
+160576006 |bebedor moderado - 3 a 6 unidades por día (hallazgo)|
+Bebedor excesivo
+160578007 |bebedor excesivo - más de 9 unidades por día (hallazgo)|
+Otras menciones
+160589000 |bebedor de cerveza (hallazgo)|
+160590009 |bebedor de cerveza y bebidas alcohólicas fuertes (hallazgo)|
+
+En relación a abuso de fármacos y drogas ilícitas, tenemos:
+CÓDIGOS PARA DROGAS (GENERALES)
+Entidad	Código propuesto en SNOMED CT
+424848002 |consumidor de drogas con fines recreativos (hallazgo)|	699449003 |abuso de metanfetamina (trastorno)|
+1145160009 |intoxicación intencional por piperazina y/o derivado de piperazina (trastorno)|	84758004 |abuso de anfetaminas (trastorno)|
+428406005 |uso inapropiado de benzodiazepinas (hallazgo)|
+762504005 |abuso de catinona sintética (trastorno)|	91388009 |abuso de sustancias psicoactivas (trastorno)|
+
+En relación a sustancias (etiqueta TYPE), tenemos:
+CÓDIGOS PARA SUSTANCIAS (TYPE)
+Entidad	Código propuesto en SNOMED CT
+39953003 |tabaco (sustancia)|	84498003 |tabaco para pipa (sustancia)|
+66562002 |tabaco para cigarrillos (sustancia)|	68540007 |nicotina (sustancia)|
+281154008 |marihuana (objeto físico)|	763660002 |resina de cannabis (sustancia)|
+398705004 |cannabis (sustancia)|	763662005 |aceite de cannabis (sustancia)|
+763661003 |hoja de cannabis (sustancia)|	53041004 |alcohol (sustancia)|
+6524003 |bebidas destiladas (sustancia)|	226528004 |whisky (sustancia)|
+35748005 |vino (sustancia)|	53410008 |cerveza (sustancia)|
+703842006 |anfetamina (sustancia)|	387499002 |metanfetamina (sustancia)|
+AAS	111151007 |esteroide anabólico (sustancia)|
+
+En relación a métodos y vías (etiqueta METHOD), tenemos:
+CÓDIGOS PARA VÍAS (METHOD)
+Entidad	Código propuesto en SNOMED CT
+228377000 |fuma drogas (hallazgo)|	228376009 |inhala drogas (hallazgo)|
+228381000 |aspira drogas (hallazgo)|	226034001 |consumidor de drogas inyectables (hallazgo)|
+228388006 |adicto a drogas endovenosas (hallazgo)|	228387001 |se inyecta drogas por vía intramuscular (hallazgo)|
+228386005 |se inyecta drogas por vía subcutánea (hallazgo)|	413096007 |consumidor de drogas no inyectables (hallazgo)|
+228383002 |uso inapropiado de drogas por vía rectal (hallazgo)|	228382007 |uso inapropiado de drogas por vía vaginal (hallazgo)|
+
+En relación a cantidad (etiqueta AMOUNT), tenemos:
+CÓDIGOS PARA CANTIDAD (AMOUNT)
+Entidad	Código propuesto en SNOMED CT
+401201003 |paquetes de cigarrillos-año (entidad observable)|	260378005 |excesivo (calificador)|
+733004002 |pastilla (unidad de presentación)|	263865001 |escaso (calificador)|
+732936001 |comprimido (unidad de presentación)|	732986007 |frasco (unidad de presentación)|	228945008 |botellas/día (calificador)|
+733025002 |vaso (unidad de presentación)|	733015007 |cucharada (unidad de presentación)|
+
+
+
+
+

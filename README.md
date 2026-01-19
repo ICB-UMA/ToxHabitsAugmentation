@@ -139,6 +139,10 @@ ToxHabits_Augmentation/
 │   └── model_comparison.ipynb
 │
 ├── config/                 # Prompts for LLMs and model parameters
+│   ├── annotation_guide/
+│   │   ├── toxhabits_annotationguide_v8.pdf
+│   │   └── toxhabits_annotationguide_v8.txt
+│   │
 │   ├── prompts/
 │   │   ├── method_1_var.txt
 │   │   ├── method_2_context.txt
