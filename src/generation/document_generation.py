@@ -5,6 +5,7 @@
 
 # --- Local Imports ---
 from .gemini import (
+    close_gemini_session,
     create_gemini_chat_session,
     send_gemini_message,
     send_gemini_message_with_pdf
@@ -14,6 +15,7 @@ from .huggingface import (
     send_huggingface_message
 )
 from .openai import (
+    close_openai_session,
     create_openai_chat_session,
     send_openai_message,
     send_openai_message_with_pdf
@@ -49,6 +51,7 @@ from ..imports import (
     OLLAMA_MODELS,
     OPENAI_MODELS,
     HUGGINGFACE_MODELS,
+    PROMPT_ANNOTATION_GUIDE,
     SENTENCE_BY_SENTENCE_METHODS,
     ALL_TOGETHER_METHODS
 )
@@ -226,9 +229,12 @@ def run_generation_workflow(
     # Determine base path
     base = Path(base_path) if base_path else Path.home()
 
+    # Determine PDF extension based on model
+    extension = "txt" if model in OLLAMA_MODELS or model in HUGGINGFACE_MODELS else "pdf"
+
     # Convert to Path objects
     original_path = Path(base / "data" / "raw" / "train") if not original_path else Path(original_path)
-    pdf_path = Path(base / "config" / "toxhabits_annotationguide.pdf") if not pdf_path else Path(pdf_path)
+    pdf_path = Path(base / "config" / "annotation_guide" / "toxhabits_annotationguide_v8." + extension) if not pdf_path else Path(pdf_path)
     ledger_path = Path(base / "data" / "processed" / "mapping_ledger.json") if not data_path else Path(data_path) / "mapping_ledger.json"
     data_path = Path(base / "data" / "processed" / "extracted_sentences") if not data_path else Path(data_path)
     output_path = Path(base / "data" / "augmented") if not output_path else Path(output_path)
@@ -255,28 +261,38 @@ def run_generation_workflow(
     # Load and create LLM session
     if model in OPENAI_MODELS:
         session = create_openai_chat_session(
-        model_name=model_params["model_name"],
-        generation_options=model_params["generation_options"],
-        system_prompt=model_params["system_prompt"]
-    )
+            model_name=model_params["model_name"],
+            generation_options=model_params["generation_options"],
+            system_prompt=model_params["system_prompt"]
+        )
     elif model in GEMINI_MODELS:
         session = create_gemini_chat_session(
-        model_name=model_params["model_name"],
-        generation_options=model_params["generation_options"],
-        system_prompt=model_params["system_prompt"]
-    )
+            model_name=model_params["model_name"],
+            generation_options=model_params["generation_options"],
+            system_prompt=model_params["system_prompt"]
+        )
     elif model in OLLAMA_MODELS:
         session = create_ollama_chat_session(
-        model_name=model_params["model_name"],
-        generation_options=model_params["generation_options"],
-        system_prompt=model_params["system_prompt"]
-    )
+            model_name=model_params["model_name"],
+            generation_options=model_params["generation_options"],
+            system_prompt=model_params["system_prompt"]
+        )
     elif model in HUGGINGFACE_MODELS:
         session = create_huggingface_chat_session(
-        model_name=model_params["model_name"],
-        generation_options=model_params["generation_options"],
-        system_prompt=model_params["system_prompt"]
-    )
+            model_name=model_params["model_name"],
+            generation_options=model_params["generation_options"],
+            system_prompt=model_params["system_prompt"]
+        )
+    
+    # Send annotation guide if needed
+    if ["method_3_guides_inj", "method_4_full_gen"]:
+        send_message_to_model(
+            session=session,
+            model=model,
+            prompt=PROMPT_ANNOTATION_GUIDE,
+            prompt_type=prompt_type,
+            pdf_path=pdf_path
+        )
 
     try:
         # Read types dictionary from json
@@ -307,7 +323,7 @@ def run_generation_workflow(
                 original_text=original_text,
                 original_entities=[],
                 prompt_type=prompt_type,
-                pdf_path=pdf_path
+                pdf_path=None
             )
         
         elif prompt_type in ALL_TOGETHER_METHODS:
@@ -331,7 +347,11 @@ def run_generation_workflow(
         save_generated_text(final_text, final_entities, doc_basename, output_path)
 
     # Close the model session
-    if model in OLLAMA_MODELS:
+    if model in OPENAI_MODELS:
+        close_openai_session(session)
+    elif model in GEMINI_MODELS:
+        close_gemini_session(session)
+    elif model in OLLAMA_MODELS:
         close_ollama_session(session)
 
 

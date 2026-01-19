@@ -25,6 +25,8 @@ class LLMChatSession:
     generation_options: Dict[str, Any]
     chat_history: List[Dict[str, str]]
     is_active: bool = True
+    openai_client: Any = None
+    openai_context: List[Dict[str, str]] = []
     gemini_client: Any = None
     gemini_chat: Any = None
     api_key: str = ""
