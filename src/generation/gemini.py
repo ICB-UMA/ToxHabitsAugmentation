@@ -8,6 +8,7 @@ PDF/document attachments.
 """
 
 # --- Third-Party Imports ---
+from http import client
 import mimetypes
 from google import genai
 from google.genai import types
@@ -30,6 +31,8 @@ def create_gemini_chat_session(
     model_name: str = "gemini-1.5-flash",
     generation_options: Optional[Dict[str, Any]] = None,
     system_prompt: Optional[str] = None,
+    developer_prompt: Optional[str] = None,
+    pdf_path: Optional[str] = None,
     api_key: str = GOOGLE_API_KEY
 ) -> LLMChatSession:
     """
@@ -39,6 +42,8 @@ def create_gemini_chat_session(
         model_name: Name of the Gemini model to use (e.g. "gemini-1.5-flash", "gemini-1.5-pro")
         generation_options: Dictionary of Gemini generation parameters (temperature, max_tokens, etc.)
         system_prompt: Optional system prompt to define the model's behavior
+        developer_prompt: Optional developer prompt to set initial context
+        pdf_path: Optional path to a PDF document to upload and reference
         api_key: Google AI API key (if not provided, will look for GOOGLE_API_KEY env var)
 
     Returns:
@@ -50,6 +55,8 @@ def create_gemini_chat_session(
 
     # Initialize the v1 Client
     client = genai.Client(api_key=api_key)
+    cache = None
+    chat = None
 
     # Set default generation options if none provided
     default_options = {
@@ -60,32 +67,98 @@ def create_gemini_chat_session(
     }
     final_options = {**default_options, **(generation_options or {})}
 
-    # Create the chat object
-    chat = client.chats.create(
-        model=model_name,
-        config=types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=final_options.get("temperature"),
-            max_output_tokens=final_options.get("max_output_tokens"),
-            top_p=final_options.get("top_p"),
-            top_k=final_options.get("top_k"),
-        ),
-        history=[]
-    )
-
     # Create LLMChatSession with Gemini-specific attributes
     session = LLMChatSession(
         model_name=model_name,
         generation_options=final_options,
         chat_history=[],
         gemini_client = client,
-        gemini_chat = chat,
+        gemini_cache = None,
         api_key = api_key
     )
 
-    # Store system prompt in history for reference
-    if system_prompt:
-        session.chat_history.append({"role": "system", "content": system_prompt})
+    # Prepare Gemini client if developer prompt provided
+    if developer_prompt:
+        if pdf_path:
+            try:
+                # Validate PDF file exists
+                pdf_file = Path(pdf_path)
+                if not pdf_file.exists():
+                    logger.error(f"PDF file not found: {pdf_path}")
+                    raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+
+                # Upload the PDF file to Gemini
+                logger.info(f"Uploading PDF file: {pdf_path}")
+                
+                # Open file in binary mode
+                with open(pdf_file, "rb") as f:
+                    uploaded_file = session.gemini_client.files.upload(
+                        file=f,
+                        config=types.UploadFileConfig(
+                            display_name=pdf_file.name,
+                            mime_type="application/pdf"
+                        )
+                    )
+
+                # Wait for file to be processed
+                while uploaded_file.state == "PROCESSING":
+                    time.sleep(2)
+                    uploaded_file = session.gemini_client.files.get(name=uploaded_file.name)
+                
+                if uploaded_file.state == "FAILED":
+                    raise RuntimeError("Failed to process PDF file")
+                
+                logger.info(f"PDF uploaded successfully: {uploaded_file.name}")
+        
+                # Create a cached content object
+                cache = client.caches.create(
+                    model=model_name,
+                    config=types.GenerateContentConfig(
+                        system_instruction=developer_prompt,
+                        contents=[uploaded_file],
+                        temperature=final_options.get("temperature"),
+                        max_output_tokens=final_options.get("max_output_tokens"),
+                        top_p=final_options.get("top_p"),
+                        top_k=final_options.get("top_k"),
+                    )
+                )
+
+            except Exception as e:
+                logger.error(f"Error processing PDF with Gemini: {e}")
+                raise RuntimeError(f"Failed to process PDF with Gemini: {e}")
+        else:
+            try:
+                # Create a cached content object without PDF
+                cache = client.caches.create(
+                    model=model_name,
+                    config=types.GenerateContentConfig(
+                        system_instruction=developer_prompt,
+                        temperature=final_options.get("temperature"),
+                        max_output_tokens=final_options.get("max_output_tokens"),
+                        top_p=final_options.get("top_p"),
+                        top_k=final_options.get("top_k"),
+                    )
+                )
+            except genai.errors.ClientError as e:
+                logger.error(f"Error creating Gemini cache: {e}")
+
+                # Fallback: Create chat without cache
+                chat = client.chats.create(
+                    model=model_name,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_prompt,
+                        temperature=final_options.get("temperature"),
+                        max_output_tokens=final_options.get("max_output_tokens"),
+                        top_p=final_options.get("top_p"),
+                        top_k=final_options.get("top_k"),
+                    ),
+                    history=[]
+                )
+
+        # Store cache and chat in session
+        session.gemini_cache = cache
+        session.gemini_chat = chat
+        session.chat_history.append({"role": "system", "content": developer_prompt})
 
     logger.info(f"Gemini chat session created with model: {model_name}")
     return session
@@ -112,9 +185,13 @@ def send_gemini_message(
         logger.error("Cannot send message: Gemini session is closed")
         raise RuntimeError("Cannot send message: Gemini session is closed")
 
-    if not hasattr(session, 'gemini_chat'):
-        logger.error("Invalid session: Missing Gemini chat instance")
-        raise ValueError("Session was not created with client.chats.create")
+    if not hasattr(session, 'gemini_client'):
+        logger.error("Invalid session: Missing Gemini client instance")
+        raise ValueError("Session was not created with genai.Client")
+
+    if not hasattr(session, 'gemini_cache'):
+        logger.error("Invalid session: Missing Gemini cache instance")
+        raise ValueError("Session was not created with client.caches.create")
 
     # Add user message to our wrapper history
     session.chat_history.append({"role": "user", "content": user_message})
@@ -122,118 +199,41 @@ def send_gemini_message(
     try:
         if stream:
             # The new SDK returns a generator for stream=True
-            response_stream = session.gemini_chat.send_message_stream(user_message)
+            response_stream = session.gemini_client.send_message_stream(user_message)
             full_response = ""
             for chunk in response_stream:
                 if chunk.text:
                     full_response += chunk.text
                     logger.debug(chunk.text, end="", flush=True)
         else:
-            response = session.gemini_chat.send_message(user_message)
+            if session.gemini_cache:
+                # Use cache instance if available
+                response = session.gemini_client.models.generate_content(
+                    model=session.model_name,
+                    contents=user_message,
+                    config=types.GenerateContentConfig(
+                        cached_content=session.gemini_cache.name,
+                        temperature=session.final_options.get("temperature"),
+                        max_output_tokens=session.final_options.get("max_output_tokens"),
+                        top_p=session.final_options.get("top_p"),
+                        top_k=session.final_options.get("top_k")
+                    )
+                )
+            else:
+                # Fallback to chat instance
+                response = session.gemini_chat.send_message(user_message)
             full_response = response.text
         
         # Add assistant response to history
         session.chat_history.append({"role": "assistant", "content": full_response})
         
         logger.debug(f"Gemini response received: {len(full_response)} characters")
+        time.sleep(30)  # To avoid rate limits
         return full_response
     
     except Exception as e:
         logger.error(f"Error calling Gemini API: {e}")
         raise RuntimeError(f"Failed to get response from Gemini: {e}")
-
-
-def send_gemini_message_with_pdf(
-    session: LLMChatSession,
-    user_message: str,
-    pdf_path: str,
-    stream: bool = False
-) -> str:
-    """
-    Sends a message along with a PDF document to the Gemini model.
-    
-    Args:
-        session: Active LLMChatSession object with Gemini attributes
-        user_message: User's input message about the PDF
-        pdf_path: Path to the PDF file to analyze
-        stream: If True, returns incremental responses (default: False)
-    
-    Returns:
-        Full assistant response text
-    """
-    if not session.is_active:
-        raise RuntimeError("Cannot send message: Gemini session is closed")
-
-    if not hasattr(session, 'gemini_client'):
-        raise ValueError("Session was not created with genai.Client")
-
-    # Validate PDF file exists
-    pdf_file = Path(pdf_path)
-    if not pdf_file.exists():
-        logger.error(f"PDF file not found: {pdf_path}")
-        raise FileNotFoundError(f"PDF file not found: {pdf_path}")
-
-    try:
-        # Upload the PDF file to Gemini
-        logger.info(f"Uploading PDF file: {pdf_path}")
-        
-        # Open file in binary mode
-        with open(pdf_file, "rb") as f:
-            uploaded_file = session.gemini_client.files.upload(
-                file=f,
-                config=types.UploadFileConfig(
-                    display_name=pdf_file.name,
-                    mime_type="application/pdf"
-                )
-            )
-
-        # Wait for file to be processed
-        while uploaded_file.state == "PROCESSING":
-            time.sleep(2)
-            uploaded_file = session.gemini_client.files.get(name=uploaded_file.name)
-        
-        if uploaded_file.state == "FAILED":
-            raise RuntimeError("Failed to process PDF file")
-        
-        logger.info(f"PDF uploaded successfully: {uploaded_file.name}")
-        
-        # In the new SDK, pass content as a list of Parts or similar structure
-        # Note: The Chat object in SDK v1 maintains history. To insert a file
-        # into the flow, we send it as part of the message content
-        
-        message_content = [
-            types.Part.from_uri(
-                file_uri=uploaded_file.uri,
-                mime_type=uploaded_file.mime_type
-            ),
-            types.Part.from_text(text=user_message)
-        ]
-
-        if stream:
-            # The new SDK returns a generator for stream=True
-            response_stream = session.gemini_chat.send_message_stream(message_content)
-            full_response = ""
-            for chunk in response_stream:
-                if chunk.text:
-                    full_response += chunk.text
-                    logger.debug(chunk.text, end="", flush=True)
-        else:
-            response = session.gemini_chat.send_message(message_content)
-            full_response = response.text
-
-        # Update wrapper history
-        session.chat_history.append({
-            "role": "user", 
-            "content": user_message,
-            "attachments": [{"type": "pdf", "path": pdf_path, "file_id": uploaded_file.name}]
-        })
-        session.chat_history.append({"role": "assistant", "content": full_response})
-        
-        return full_response
-        
-    except Exception as e:
-        logger.error(f"Error processing PDF with Gemini: {e}")
-        raise RuntimeError(f"Failed to process PDF with Gemini: {e}")
 
 
 def send_gemini_message_with_documents(

@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-...
+Document Generation Module
+
+This module implements the document generation workflow using various
+large language models (LLMs) such as OpenAI, Gemini, Ollama, and HuggingFace.
 """
 
 # --- Local Imports ---
 from .gemini import (
     close_gemini_session,
     create_gemini_chat_session,
-    send_gemini_message,
-    send_gemini_message_with_pdf
+    send_gemini_message
 )
 from .huggingface import (
     create_huggingface_chat_session,
@@ -17,8 +19,7 @@ from .huggingface import (
 from .openai import (
     close_openai_session,
     create_openai_chat_session,
-    send_openai_message,
-    send_openai_message_with_pdf
+    send_openai_message
 )
 from .ollama import (
     close_ollama_session,
@@ -95,7 +96,7 @@ def build_full_prompt(
     label: str = "Input Text to Process"
 ) -> str:
     """Combines base prompt with text prompt."""
-    return f"{base_prompt}\n\n{label}: {text_prompt}"
+    return [base_prompt, f"{label}: {text_prompt}"]
 
 
 def process_model_response(
@@ -230,11 +231,13 @@ def run_generation_workflow(
     base = Path(base_path) if base_path else Path.home()
 
     # Determine PDF extension based on model
-    extension = "txt" if model in OLLAMA_MODELS or model in HUGGINGFACE_MODELS else "pdf"
+    guidelines = "toxhabits_annotationguide_v8.pdf"
+    if model in OLLAMA_MODELS or model in HUGGINGFACE_MODELS:
+        guidelines = "toxhabits_annotationguide_v8.txt"
 
     # Convert to Path objects
     original_path = Path(base / "data" / "raw" / "train") if not original_path else Path(original_path)
-    pdf_path = Path(base / "config" / "annotation_guide" / "toxhabits_annotationguide_v8." + extension) if not pdf_path else Path(pdf_path)
+    pdf_path = Path(base / "config" / "annotation_guide" / guidelines) if not pdf_path else Path(pdf_path)
     ledger_path = Path(base / "data" / "processed" / "mapping_ledger.json") if not data_path else Path(data_path) / "mapping_ledger.json"
     data_path = Path(base / "data" / "processed" / "extracted_sentences") if not data_path else Path(data_path)
     output_path = Path(base / "data" / "augmented") if not output_path else Path(output_path)
@@ -260,16 +263,28 @@ def run_generation_workflow(
 
     # Load and create LLM session
     if model in OPENAI_MODELS:
+        if prompt_type not in ["method_3_guides_inj", "method_4_full_gen"]:
+            # Special handling to not send PDF first
+            pdf_path = None
+
         session = create_openai_chat_session(
             model_name=model_params["model_name"],
             generation_options=model_params["generation_options"],
-            system_prompt=model_params["system_prompt"]
+            system_prompt=model_params["system_prompt"],
+            developer_prompt=base_prompt,
+            pdf_path=pdf_path
         )
     elif model in GEMINI_MODELS:
+        if prompt_type not in ["method_3_guides_inj", "method_4_full_gen"]:
+            # Special handling to not send PDF first
+            pdf_path = None
+
         session = create_gemini_chat_session(
             model_name=model_params["model_name"],
             generation_options=model_params["generation_options"],
-            system_prompt=model_params["system_prompt"]
+            system_prompt=model_params["system_prompt"],
+            developer_prompt=base_prompt,
+            pdf_path=pdf_path
         )
     elif model in OLLAMA_MODELS:
         session = create_ollama_chat_session(
@@ -282,16 +297,6 @@ def run_generation_workflow(
             model_name=model_params["model_name"],
             generation_options=model_params["generation_options"],
             system_prompt=model_params["system_prompt"]
-        )
-    
-    # Send annotation guide if needed
-    if ["method_3_guides_inj", "method_4_full_gen"]:
-        send_message_to_model(
-            session=session,
-            model=model,
-            prompt=PROMPT_ANNOTATION_GUIDE,
-            prompt_type=prompt_type,
-            pdf_path=pdf_path
         )
 
     try:
@@ -358,7 +363,7 @@ def run_generation_workflow(
 def send_message_to_model(
     session: Any,
     model: str,
-    prompt: str,
+    prompt: List[str],
     prompt_type: str,
     pdf_path: Optional[str] = None
 ) -> str:
@@ -381,15 +386,11 @@ def send_message_to_model(
     
     # Route to appropriate model
     if model in OPENAI_MODELS:
-        if use_pdf:
-            return send_openai_message_with_pdf(session, prompt, pdf_path)
-        return send_openai_message(session, prompt)
+        return send_openai_message(session, prompt[1])
     elif model in GEMINI_MODELS:
-        if use_pdf:
-            return send_gemini_message_with_pdf(session, prompt, pdf_path)
         return send_gemini_message(session, prompt)
     elif model in OLLAMA_MODELS:
-        return send_ollama_message(session, prompt)
+        return send_ollama_message(session, f"{prompt[0]}\n\n{prompt[1]}")
     elif model in HUGGINGFACE_MODELS:
         return send_huggingface_message(session, prompt)
     else:

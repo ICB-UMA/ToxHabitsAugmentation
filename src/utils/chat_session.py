@@ -26,7 +26,8 @@ class LLMChatSession:
     chat_history: List[Dict[str, str]]
     is_active: bool = True
     openai_client: Any = None
-    openai_context: List[Dict[str, str]] = []
+    openai_first_response: Any = None
     gemini_client: Any = None
+    gemini_cache: Any = None
     gemini_chat: Any = None
     api_key: str = ""

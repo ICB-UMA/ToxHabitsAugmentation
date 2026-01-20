@@ -26,6 +26,8 @@ def create_openai_chat_session(
     model_name: str = "gpt-4.1-nano-2025-04-14",
     generation_options: Optional[Dict[str, Any]] = None,
     system_prompt: Optional[str] = None,
+    developer_prompt: Optional[str] = None,
+    pdf_path: Optional[str] = None,
     api_key: Optional[str] = OPENAI_API_KEY
 ) -> LLMChatSession:
     """
@@ -35,6 +37,8 @@ def create_openai_chat_session(
         model_name: OpenAI model to use (e.g., "gpt-4", "gpt-3.5-turbo")
         generation_options: Dictionary of OpenAI generation parameters (temperature, max_tokens, etc.)
         system_prompt: Optional system prompt to define the model's behavior
+        developer_prompt: Optional developer prompt to set initial context
+        pdf_path: Optional path to a PDF document to upload and reference
         api_key: OpenAI API key. If not provided, will fall back to OPENAI_API_KEY env var
 
     Returns:
@@ -61,17 +65,74 @@ def create_openai_chat_session(
         model_name=model_name,
         generation_options=final_options,
         chat_history=[],
-        openai_context=[],
+        openai_first_response=None,
         pdf_prompt="",
         openai_client = client,
         api_key=api_key,
     )
 
-    # Store system prompt in history for reference
-    if system_prompt:
-        context_message = {"role": "system", "content": system_prompt}
+    # Prepare OpenAI client if developer prompt provided
+    if developer_prompt:
+        if pdf_path:
+            try:
+                # Validate PDF file exists
+                pdf_file = Path(pdf_path)
+                if not pdf_file.exists():
+                    logger.error(f"PDF file not found: {pdf_path}")
+                    raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+
+                # Upload the PDF file to OpenAI
+                logger.info(f"Uploading PDF file: {pdf_path}")
+                
+                # Open file in binary mode
+                with open(pdf_file, "rb") as f:
+                    uploaded_file = session.openai_client.files.create(
+                        file=f,
+                        purpose="user_data"
+                    )
+
+                logger.info(f"PDF uploaded successfully: {uploaded_file.name}")
+
+                # Prepare message with attachment reference
+                context_message = session.openai_context + [
+                    {
+                        "role": "developer",
+                        "content": [
+                            {
+                                "type": "input_file",
+                                "file_id": uploaded_file.id,
+                            },
+                            {
+                                "type": "input_text",
+                                "text": developer_prompt,
+                            },
+                        ]
+                    }
+                ]
+
+            except Exception as e:
+                logger.error(f"Error processing PDF with OpenAI: {e}")
+                raise RuntimeError(f"Failed to process PDF with OpenAI: {e}")
+        else:
+            # Prepare standard context message
+            context_message = {
+                "role": "developer",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": developer_prompt
+                    }
+                ]
+            }
+
+        # Initial call to establish context
+        first_response = client.responses.create(
+            model=model_name,
+            input=context_message,
+            store=True
+        )
+        session.openai_first_response = first_response
         session.chat_history.append(context_message)
-        session.openai_context.append(context_message)
 
     logger.info(f"OpenAI chat session created with model: {model_name}")
     return session
@@ -103,16 +164,24 @@ def send_openai_message(
         raise ValueError("Session was not created with openai.OpenAI() client")
 
     # Add user message to our wrapper history
-    user_message = {"role": "user", "content": user_message}
+    user_message = {
+        "role": "user",
+        "content": 
+            {
+                "type": "input_text",
+                "text": user_message,
+            }
+    }
     session.chat_history.append(user_message)
     user_message = session.openai_context + [user_message]
 
     try:
         if stream:
             # Streaming response
-            response_stream = session.openai_client.chat.completions.create(
+            response_stream = session.openai_client.responses.create(
                 model=session.model_name,
-                messages=user_message,
+                previous_response_id=session.openai_first_response.id,
+                input=user_message,
                 stream=True,
                 **session.generation_options
             )
@@ -131,12 +200,13 @@ def send_openai_message(
                     logger.debug(chunk.text, end="", flush=True)
         else:
             # Non-streaming response
-            response = session.openai_client.chat.completions.create(
+            response = session.openai_client.responses.create(
                 model=session.model_name,
-                messages={"role": "user", "content": user_message},
+                previous_response_id=session.openai_first_response.id,
+                input=user_message,
                 **session.generation_options
             )
-            full_response = response.choices[0].message.content if response.choices else ""
+            full_response = response.output_text if response.output_text else ""
         
         # Add assistant response to history
         session.chat_history.append({"role": "assistant", "content": full_response})
@@ -147,111 +217,6 @@ def send_openai_message(
     except Exception as e:
         logger.error(f"Error calling OpenAI API: {e}")
         raise RuntimeError(f"Failed to get response from OpenAI: {e}")
-
-
-def send_openai_message_with_pdf(
-    session: LLMChatSession,
-    user_message: str,
-    pdf_path: str,
-    stream: bool = False
-) -> str:
-    """
-    Sends a message along with a PDF document to the OpenAI model.
-    
-    Args:
-        session: Active LLMChatSession object with OpenAI attributes
-        user_message: User's input message about the PDF
-        pdf_path: Path to the PDF file to analyze
-        stream: If True, returns incremental responses (default: False)
-    
-    Returns:
-        Full assistant response text
-    """
-    if not session.is_active:
-        raise RuntimeError("Cannot send message: OpenAI session is closed")
-
-    if not hasattr(session, 'openai_client'):
-        raise ValueError("Session was not created with openai.OpenAI() client")
-
-    # Validate PDF file exists
-    pdf_file = Path(pdf_path)
-    if not pdf_file.exists():
-        logger.error(f"PDF file not found: {pdf_path}")
-        raise FileNotFoundError(f"PDF file not found: {pdf_path}")
-
-    try:
-        # Upload the PDF file to OpenAI
-        logger.info(f"Uploading PDF file: {pdf_path}")
-        
-        # Open file in binary mode
-        with open(pdf_file, "rb") as f:
-            uploaded_file = session.openai_client.files.create(
-                file=f,
-                purpose="user_data"
-            )
-
-        logger.info(f"PDF uploaded successfully: {uploaded_file.name}")
-
-        # Prepare message with attachment reference
-        user_input_with_attachment = session.openai_context + [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_file",
-                        "file_id": uploaded_file.id,
-                    },
-                    {
-                        "type": "input_text",
-                        "text": user_message,
-                    },
-                ]
-            }
-        ]
-        
-        if stream:
-            # Streaming response
-            response_stream = session.openai_client.chat.completions.create(
-                model=session.model_name,
-                input=user_input_with_attachment,
-                stream=True,
-                **session.generation_options
-            )
-            full_response = ""
-            for chunk in response_stream:
-                # chunk is typically a dict with choices[0].delta.content
-                if not isinstance(chunk, dict):
-                    continue
-                choices = chunk.get("choices")
-                if not choices:
-                    continue
-                delta = choices[0].get("delta", {})
-                text = delta.get("content")
-                if text:
-                    full_response += text
-                    logger.debug(chunk.text, end="", flush=True)
-        else:
-            # Non-streaming response
-            response = session.openai_client.chat.completions.create(
-                model=session.model_name,
-                input=user_input_with_attachment,
-                **session.generation_options
-            )
-            full_response = response.output_text
-
-        # Update wrapper history
-        session.chat_history.append({
-            "role": "user", 
-            "content": user_message,
-            "attachments": [{"type": "pdf", "path": pdf_path, "file_id": uploaded_file.name}]
-        })
-        session.chat_history.append({"role": "assistant", "content": full_response})
-        
-        return full_response
-        
-    except Exception as e:
-        logger.error(f"Error processing PDF with OpenAI: {e}")
-        raise RuntimeError(f"Failed to process PDF with OpenAI: {e}")
 
 
 def close_openai_session(
@@ -265,8 +230,8 @@ def close_openai_session(
     # Clear OpenAI-specific attributes
     if hasattr(session, 'openai_client'):
         delattr(session, 'openai_client')
-    if hasattr(session, 'openai_context'):
-        delattr(session, 'openai_context')
+    if hasattr(session, 'openai_first_response'):
+        delattr(session, 'openai_first_response')
     if hasattr(session, 'api_key'):
         delattr(session, 'api_key')
 

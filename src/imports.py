@@ -42,9 +42,9 @@ GOOGLE_API_KEY = ""
 OPENAI_API_KEY = ""
 
 # Supported Models
-GEMINI_MODELS = ["gemini"]
+GEMINI_MODELS = ["gemini-2.5-flash"]
 OLLAMA_MODELS = ["gemma3-4b", "llama3.2-3b", "ministral3-3b", "qwen3-4b"]
-OPENAI_MODELS = ["GPT-4.1_nano", "GPT-5_nano"]
+OPENAI_MODELS = ["gpt-4.1-nano", "gpt-5-nano"]
 HUGGINGFACE_MODELS = ["Llama-Doctor", "Specialized-Model"]
 
 # Define augmentation method categories
