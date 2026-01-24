@@ -119,6 +119,18 @@ def generate_augmented_files(
     # Apply displacement to get actual current positions in the modified text
     adjusted_start = original_start + displacement
     adjusted_end = original_end + displacement
+
+    if original_text[adjusted_start] == '\n':
+        # Exclude leading newline from replacement
+        original_start += 1
+        adjusted_start += 1
+        logger.debug(f"  Adjusted original_start to exclude leading newline: {original_start}")
+    
+    if original_text[adjusted_end-1] == '\n':
+        # Exclude trailing newline from replacement
+        original_end -= 1
+        adjusted_end -= 1
+        logger.debug(f"  Adjusted original_end to exclude trailing newline: {original_end}")
     
     # Replace the text segment
     modified_text = (
@@ -145,13 +157,13 @@ def generate_augmented_files(
         adjusted_entity = entity.copy()
         
         # Entities before the replacement remain unchanged
-        if entity["end"] <= original_start:
+        if entity["end"] <= adjusted_start:
             adjusted_original_entities.append(adjusted_entity)
         
         # Entities after the replacement need position adjustment
-        elif entity["start"] >= original_end:
-            adjusted_entity["start"] = entity["start"] + new_displacement
-            adjusted_entity["end"] = entity["end"] + new_displacement
+        elif entity["start"] >= adjusted_end:
+            adjusted_entity["start"] = entity["start"] + adjusted_start
+            adjusted_entity["end"] = entity["end"] + adjusted_start
             adjusted_original_entities.append(adjusted_entity)
         else:
             # Skip overlapping entities
@@ -190,6 +202,7 @@ def generate_augmented_files(
         if extracted_text != entity["text"]:
             logger.warning(f"Warning: Entity {entity['id']} text mismatch. Expected '{entity['text']}', got '{extracted_text}'")
     
+    logger.debug(f"  Current entities: {combined_entities}")
     return modified_text, combined_entities, new_displacement
 
 

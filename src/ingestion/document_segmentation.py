@@ -181,6 +181,7 @@ def segmentate_toxhabits_documents(
             # Append extraction info to ledger
             ledger[txt_file.name].append({
                 'extracted_file': extracted_txt_name,
+                'original_sentence': sentence_text,
                 'original_start': sentence_start,
                 'original_end': sentence_end,
                 'extracted_start': 0,

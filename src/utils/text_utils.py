@@ -43,6 +43,45 @@ def adjust_entity_offsets(
     }
 
 
+def find_entities_in_sentence(
+    sentence_start: int,
+    sentence_end: int,
+    sentence_text: str,
+    entities: List[Dict],
+    sentences: List[Dict]
+) -> List[Dict]:
+    """
+    Check if any entities overlap with the given sentence and add them to sentences list.
+
+    Args:
+        sentence_start: Start offset of the sentence in the original text
+        sentence_end: End offset of the sentence in the original text
+        sentence_text: Text of the sentence
+        entities: List of all entity dicts with absolute offsets
+        sentences: List to append found sentences with entities
+    
+    Returns:
+        Updated sentences list with sentences containing entities
+    """
+    # Find entities that overlap with this sentence
+    sentence_entities = []
+    for entity in entities:
+        # Check if entity overlaps with sentence (entity start < sentence end AND entity end > sentence start)
+        if entity['start'] < sentence_end and entity['end'] > sentence_start:
+            sentence_entities.append(entity)
+    
+    if sentence_entities:
+        # If there are entities in this sentence, add to sentences list
+        sentences.append({
+            'start': sentence_start,
+            'end': sentence_end,
+            'text': sentence_text,
+            'entities': sentence_entities
+        })
+
+    return sentences
+
+
 def find_sentences_with_entities(
     text: str,
     entities: List[Dict]
@@ -73,24 +112,44 @@ def find_sentences_with_entities(
             # Skip empty sentences
             continue
 
-        # Calculate sentence offsets
-        sentence_start = sentence_text.start_char
-        sentence_end = sentence_text.end_char
-        
-        # Find entities that overlap with this sentence
-        sentence_entities = []
-        for entity in entities:
-            # Check if entity overlaps with sentence (entity start < sentence end AND entity end > sentence start)
-            if entity['start'] < sentence_end and entity['end'] > sentence_start:
-                sentence_entities.append(entity)
-        
-        if sentence_entities:
-            sentences.append({
-                'start': sentence_start,
-                'end': sentence_end,
-                'text': sentence_text.text,
-                'entities': sentence_entities
-            })
+        # Check if sentence contains any newline characters
+        if '\n' in sentence_text.text:
+            # Split further by newlines
+            sub_sentences = sentence_text.text.split('\n')
+            current_offset = sentence_text.start_char
+
+            for sub_sentence in sub_sentences: 
+                # Trim whitespace
+                sub_sentence = sub_sentence.strip()
+                if not sub_sentence:
+                    # Account for the newline character
+                    current_offset += 1
+                    continue
+
+                # Calculate sub-sentence offsets
+                sub_sentence_start = current_offset
+                sub_sentence_end = current_offset + len(sub_sentence)
+
+                # Find entities in this sub-sentence
+                sentences = find_entities_in_sentence(
+                    sub_sentence_start,
+                    sub_sentence_end,
+                    sub_sentence,
+                    entities,
+                    sentences
+                )
+
+                # Move past this sub-sentence and the newline
+                current_offset += len(sub_sentence) + 1
+        else:
+            # Find entities in this sentence
+            sentences = find_entities_in_sentence(
+                sentence_text.start_char,
+                sentence_text.end_char,
+                sentence_text.text,
+                entities,
+                sentences
+            )
     
     return sentences
 

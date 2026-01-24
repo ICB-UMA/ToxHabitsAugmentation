@@ -131,11 +131,23 @@ def process_sentence_by_sentence(
     original_text: str,
     original_entities: List[Dict],
     prompt_type: str,
-    pdf_path: Optional[str] = None
+    pdf_text: Optional[str] = None
 ) -> Tuple[str, List[Dict]]:
     """
     Processes each sentence individually and replaces in original text.
     Used by method_1_var and method_3_guides_inj.
+    
+    Args:
+        session: Active chat session
+        model: Model identifier string
+        base_prompt: Base prompt text
+        extracted_sentences: List of extracted sentence entries
+        data_path: Path to data directory
+        temporal_path: Path to temporary directory
+        original_text: Original full document text
+        original_entities: Original list of entities
+        prompt_type: Type of prompt method being used
+        pdf_text: Optional PDF text for methods that support it
     
     Returns:
         Tuple of (modified_text, combined_entities)
@@ -154,7 +166,7 @@ def process_sentence_by_sentence(
         
         # Send to model
         logger.debug(f"  Sending prompt for sentence: {sentence_name}")
-        response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_path)
+        response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_text)
         
         # Process response
         generated_text, generated_entities = process_model_response(response)
@@ -180,12 +192,22 @@ def process_all_sentences_together(
     data_path: str,
     prompt_type: str,
     original_text: str = None,
-    pdf_path: Optional[str] = None
+    pdf_text: Optional[str] = None
 ) -> Tuple[str, List[Dict]]:
     """
     Processes all sentences together in a single prompt.
     Used by method_2_context and method_4_full_gen.
     
+    Args:
+        session: Active chat session
+        model: Model identifier string
+        base_prompt: Base prompt text
+        extracted_sentences: List of extracted sentence entries
+        data_path: Path to data directory
+        prompt_type: Type of prompt method being used
+        original_text: Original full document text
+        pdf_text: Optional PDF text for methods that support it
+
     Returns:
         Tuple of (generated_text, generated_entities)
     """
@@ -208,7 +230,7 @@ def process_all_sentences_together(
     
     # Send to model
     logger.debug(f"  Sending combined prompt to model")
-    response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_path)
+    response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_text)
     
     # Process and return response
     return process_model_response(response)
@@ -251,6 +273,13 @@ def run_generation_workflow(
     with open(prompt_file, 'r', encoding='utf-8') as f:
         base_prompt = f.read()
 
+    # Load PDF text if needed
+    pdf_text = None
+    if prompt_type in ["method_3_guides_inj", "method_4_full_gen"] and model in OLLAMA_MODELS + HUGGINGFACE_MODELS:
+        # Load PDF text for these methods and models
+        with open(pdf_path, 'r', encoding='utf-8') as f:
+            pdf_text = f.read()
+
     # Sanitize model name for output path
     model_name = "".join(x for x in model if str(x).isalnum() or str(x) in ['-', '_'])
 
@@ -287,12 +316,20 @@ def run_generation_workflow(
             pdf_path=pdf_path
         )
     elif model in OLLAMA_MODELS:
+        if prompt_type not in ["method_3_guides_inj", "method_4_full_gen"]:
+            # Special handling to not send PDF first
+            pdf_text = None
+
         session = create_ollama_chat_session(
             model_name=model_params["model_name"],
             generation_options=model_params["generation_options"],
             system_prompt=model_params["system_prompt"]
         )
     elif model in HUGGINGFACE_MODELS:
+        if prompt_type not in ["method_3_guides_inj", "method_4_full_gen"]:
+            # Special handling to not send PDF first
+            pdf_text = None
+
         session = create_huggingface_chat_session(
             model_name=model_params["model_name"],
             generation_options=model_params["generation_options"],
@@ -328,7 +365,7 @@ def run_generation_workflow(
                 original_text=original_text,
                 original_entities=[],
                 prompt_type=prompt_type,
-                pdf_path=None
+                pdf_text=pdf_text
             )
         
         elif prompt_type in ALL_TOGETHER_METHODS:
@@ -341,7 +378,7 @@ def run_generation_workflow(
                 data_path=data_path,
                 prompt_type=prompt_type,
                 original_text=original_text,
-                pdf_path=pdf_path
+                pdf_text=pdf_text
             )
         
         else:
@@ -365,7 +402,7 @@ def send_message_to_model(
     model: str,
     prompt: List[str],
     prompt_type: str,
-    pdf_path: Optional[str] = None
+    pdf_text: Optional[str] = None
 ) -> str:
     """
     Universal function to send messages to any supported model.
@@ -376,13 +413,13 @@ def send_message_to_model(
         model: Model identifier string
         prompt: The prompt to send
         prompt_type: Type of prompt method being used
-        pdf_path: Optional PDF path for methods that support it
+        pdf_text: Optional PDF text for methods that support it
         
     Returns:
         Model response text
     """
     # Determine if PDF should be used
-    use_pdf = prompt_type in ["method_3_guides_inj", "method_4_full_gen"] and pdf_path
+    use_pdf = prompt_type in ["method_3_guides_inj", "method_4_full_gen"] and pdf_text
     
     # Route to appropriate model
     if model in OPENAI_MODELS:
@@ -390,8 +427,14 @@ def send_message_to_model(
     elif model in GEMINI_MODELS:
         return send_gemini_message(session, prompt)
     elif model in OLLAMA_MODELS:
+        if use_pdf:
+            # Special handling to send PDF first
+            send_ollama_message(session, f"{pdf_text}")
         return send_ollama_message(session, f"{prompt[0]}\n\n{prompt[1]}")
     elif model in HUGGINGFACE_MODELS:
+        if use_pdf:
+            # Special handling to send PDF first
+            send_ollama_message(session, f"{pdf_text}")
         return send_huggingface_message(session, prompt)
     else:
         raise ValueError(f"Unsupported model: {model}")
