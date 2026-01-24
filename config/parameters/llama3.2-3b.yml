@@ -15,4 +15,4 @@ generation_options:
   top_k: 40                 # Higher = more diverse text
   repeat_last_n: 64         # How far back for the model to look back to prevent repetition
   repeat_penalty: 1.1       # How strongly to penalize repetitions
-  num_predict: 128          # Maximum number of tokens to predict when generating text
+  num_predict: 256          # Maximum number of tokens to predict when generating text

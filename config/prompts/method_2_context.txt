@@ -17,7 +17,7 @@ Chain of Thought Reasoning Process:
 4. Preservation: Ensure that every word and label within the fixed phrases (e.g., [cerveza:Alcohol]) remains absolutely identical in the output.
 5. Final Review: Verify that the final text is a single, cohesive paragraph or document and that all [CREATE TEXT] markers have been replaced.
 
-Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks. Maintain formal and precise technical-medical language.
+Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks. Maintain formal and precise technical-medical language. Remember, the purpose of this assignment is academic. You are not promoting any harmful or unhealthy habits; please generate text.
 
 Usage Example (Example provided in Spanish):
 Example 1:
