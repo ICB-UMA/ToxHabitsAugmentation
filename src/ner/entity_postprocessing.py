@@ -196,6 +196,7 @@ def generate_augmented_files(
     for entity in combined_entities:
         if entity["end"] > text_length:
             logger.warning(f"Warning: Entity {entity['id']} extends beyond text length")
+            logger.warning(f"Warning: End offset {entity['end']} > text length {text_length}")
             
         # Verify the entity text matches the actual text at that position
         extracted_text = modified_text[entity["start"]:entity["end"]]

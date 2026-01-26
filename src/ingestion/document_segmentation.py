@@ -96,6 +96,9 @@ def segmentate_toxhabits_documents(
     # Create output directories
     output_path.mkdir(parents=True, exist_ok=True)
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Track processed documents to avoid duplicates
+    documents_processed = set()
     
     # Load existing ledger or create new one
     if ledger_path.exists():
@@ -151,7 +154,18 @@ def segmentate_toxhabits_documents(
             
             extracted_txt_path = output_path / extracted_txt_name
             extracted_ann_path = output_path / extracted_ann_name
+
+            # Skip if already exists
+            if extracted_ann_path.exists() and extracted_txt_path.exists():
+                logger.info(f"  Extracted files {extracted_txt_name} and {extracted_ann_name} already exist, skipping")
+                documents_processed.add(extracted_txt_name)
+                continue
             
+            # Skip if already processed in this run
+            if extracted_txt_name in documents_processed:
+                logger.info(f"  Extracted sentence {extracted_txt_name} already processed, skipping")
+                continue
+
             # Adjust entity offsets for the extracted sentence
             adjusted_entities = [
                 adjust_entity_offsets(entity, -sentence_start) 
@@ -191,6 +205,7 @@ def segmentate_toxhabits_documents(
                     {
                         'id': entity['id'],
                         'type': entity['type'],
+                        'text': entity['text'],
                         'original_start': entity['start'] + sentence_start,
                         'original_end': entity['end'] + sentence_start,
                         'extracted_start': entity['start'],
@@ -199,6 +214,9 @@ def segmentate_toxhabits_documents(
                     for entity in adjusted_entities
                 ]
             })
+
+            # Track processed documents
+            documents_processed.add(extracted_txt_name)
     
     # Save updated ledger
     try:

@@ -52,6 +52,7 @@ from ..imports import (
     OLLAMA_MODELS,
     OPENAI_MODELS,
     HUGGINGFACE_MODELS,
+    MAXIMUM_NUMBER_OF_RETRIES,
     PROMPT_ANNOTATION_GUIDE,
     SENTENCE_BY_SENTENCE_METHODS,
     ALL_TOGETHER_METHODS
@@ -163,13 +164,29 @@ def process_sentence_by_sentence(
         # Build prompt for this sentence
         text_prompt = build_sentence_prompt(data_path, sentence_name, temporal_path)
         full_prompt = build_full_prompt(base_prompt, text_prompt)
+
+        # Retry logic for empty entity extraction
+        counter = 0
         
-        # Send to model
-        logger.debug(f"  Sending prompt for sentence: {sentence_name}")
-        response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_text)
-        
-        # Process response
-        generated_text, generated_entities = process_model_response(response)
+        while True:
+            # Send to model
+            logger.debug(f"  Sending prompt for sentence: {sentence_name}")
+            response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_text)
+            
+            # Process response
+            generated_text, generated_entities = process_model_response(response)
+
+            # Retry conditions
+            if not generated_entities:
+                logger.warning(f"  Warning: No entities extracted for sentence {sentence_name}. Retrying...")
+            elif counter >= MAXIMUM_NUMBER_OF_RETRIES:
+                logger.error(f"  Error: Maximum retries reached for sentence {sentence_name}. Skipping...")
+                break
+            else:
+                break
+
+            # Increment retry counter
+            counter += 1
         
         # Update text with replacement
         text, entities, displacement = generate_augmented_files(
@@ -228,12 +245,31 @@ def process_all_sentences_together(
         text_prompt = "[CREATE TEXT] ".join(sentence_prompts)
         full_prompt = build_full_prompt(base_prompt, text_prompt)
     
-    # Send to model
-    logger.debug(f"  Sending combined prompt to model")
-    response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_text)
+    # Retry logic for empty entity extraction
+    counter = 0
     
-    # Process and return response
-    return process_model_response(response)
+    while True:
+        # Send to model
+        logger.debug(f"  Sending combined prompt to model")
+        response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_text)
+
+        # Process response
+        generated_text, generated_entities = process_model_response(response)
+    
+        # Retry conditions
+        if not generated_entities:
+            logger.warning(f"  Warning: No entities extracted for sentence {sentence_name}. Retrying...")
+        elif counter >= MAXIMUM_NUMBER_OF_RETRIES:
+            logger.error(f"  Error: Maximum retries reached for sentence {sentence_name}. Skipping...")
+            break
+        else:
+            break
+        
+        # Increment retry counter
+        counter += 1
+
+    # Return response
+    return generated_text, generated_entities
 
 
 def run_generation_workflow(
@@ -285,6 +321,13 @@ def run_generation_workflow(
 
     # Create output path
     output_path = os.path.join(output_path, prompt_type, model_name)
+
+    # Setup logging for this generation run
+    logger_file = os.path.join(output_path, f"generation_{prompt_type}_{model_name}.json")
+    logger_json = {
+        'generated_documents': [],
+        'failed_documents': []
+    }
 
     # Load parameters from YAML
     yaml_file = os.path.join(yaml_file_path, f"{model}.yml")
@@ -352,41 +395,65 @@ def run_generation_workflow(
         
         logger.debug(f"Data Augmentation process for document {doc_name}...")
 
-        # Route to appropriate processing method
-        if prompt_type in SENTENCE_BY_SENTENCE_METHODS:
-            # Process sentence by sentence with text replacement
-            final_text, final_entities = process_sentence_by_sentence(
-                session=session,
-                model=model,
-                base_prompt=base_prompt,
-                extracted_sentences=extracted_sentences,
-                data_path=data_path,
-                temporal_path=temporal_path,
-                original_text=original_text,
-                original_entities=[],
-                prompt_type=prompt_type,
-                pdf_text=pdf_text
-            )
-        
-        elif prompt_type in ALL_TOGETHER_METHODS:
-            # Process all sentences together
-            final_text, final_entities = process_all_sentences_together(
-                session=session,
-                model=model,
-                base_prompt=base_prompt,
-                extracted_sentences=extracted_sentences,
-                data_path=data_path,
-                prompt_type=prompt_type,
-                original_text=original_text,
-                pdf_text=pdf_text
-            )
-        
-        else:
-            raise ValueError(f"Unknown prompt type: {prompt_type}")
-        
-        # Save generated document
+        # Specify the output files
         doc_basename = os.path.splitext(os.path.basename(doc_name))[0]
-        save_generated_text(final_text, final_entities, doc_basename, output_path)
+        generated_txt_file = os.path.join(output_path, f"{doc_basename}.txt")
+        generated_ann_file = os.path.join(output_path, f"{doc_basename}.ann")
+
+        # Check if the files exist
+        if not os.path.exists(generated_txt_file) or not os.path.exists(generated_ann_file):
+            # Route to appropriate processing method
+            if prompt_type in SENTENCE_BY_SENTENCE_METHODS:
+                # Process sentence by sentence with text replacement
+                final_text, final_entities = process_sentence_by_sentence(
+                    session=session,
+                    model=model,
+                    base_prompt=base_prompt,
+                    extracted_sentences=extracted_sentences,
+                    data_path=data_path,
+                    temporal_path=temporal_path,
+                    original_text=original_text,
+                    original_entities=[],
+                    prompt_type=prompt_type,
+                    pdf_text=pdf_text
+                )
+            
+            elif prompt_type in ALL_TOGETHER_METHODS:
+                # Process all sentences together
+                final_text, final_entities = process_all_sentences_together(
+                    session=session,
+                    model=model,
+                    base_prompt=base_prompt,
+                    extracted_sentences=extracted_sentences,
+                    data_path=data_path,
+                    prompt_type=prompt_type,
+                    original_text=original_text,
+                    pdf_text=pdf_text
+                )
+            
+            else:
+                raise ValueError(f"Unknown prompt type: {prompt_type}")
+            
+            if not final_entities:
+                # No entities extracted, log failure
+                logger.error(f"  Error: No entities extracted for document {doc_name}. Skipping saving.")
+                logger_json['failed_documents'].append({
+                    'sentence': doc_basename,
+                    'status': 'failed_no_entities'
+                })
+            else:
+                # Save generated document
+                save_generated_text(final_text, final_entities, doc_basename, output_path)
+        else:
+            logger.info(f"Generated files for {doc_name} already exist. Skipping generation.")
+            logger_json['generated_documents'].append({
+                'sentence': doc_basename,
+                'status': 'success'
+            })
+
+    # Save generation log
+    with open(logger_file, 'w', encoding='utf-8') as f:
+        json.dump(logger_json, f, indent=4)
 
     # Close the model session
     if model in OPENAI_MODELS:

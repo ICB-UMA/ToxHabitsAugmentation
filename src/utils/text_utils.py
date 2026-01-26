@@ -37,6 +37,7 @@ def adjust_entity_offsets(
     return {
         'id': entity['id'],
         'type': entity['type'],
+        'text': entity['text'],
         'start': entity['start'] + sentence_start,
         'end': entity['end'] + sentence_start,
         'text': entity['text']
