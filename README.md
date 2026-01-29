@@ -107,7 +107,8 @@ ToxHabits_Augmentation/
 │   │   └── document_segmentation.py
 │   │
 │   ├── ner/                # Regex logic for generating new .ann
-│   │   └── entity_postprocessing.py
+│   │   ├── entity_postprocessing.py
+│   │   └── entity_validation.py
 │   │
 │   ├── generation/         # Scripts for APIs (OpenAI, Gemini, Ollama, HF)
 │   │   ├── openai.py
@@ -116,7 +117,6 @@ ToxHabits_Augmentation/
 │   │   └── huggingface.py
 │   │
 │   ├── corpus_analysis/    # Corpus analysis scripts
-│   │   ├── descriptive_stats.py
 │   │   ├── lexical_analysis.py
 │   │   ├── clinical_term_analysis.py
 │   │   └── similarity_analysis.py
@@ -141,7 +141,8 @@ ToxHabits_Augmentation/
 ├── config/                 # Prompts for LLMs and model parameters
 │   ├── annotation_guide/
 │   │   ├── toxhabits_annotationguide_v8.pdf
-│   │   └── toxhabits_annotationguide_v8.txt
+│   │   ├── toxhabits_annotationguide_v8.txt
+│   │   └── toxhabits_annotationguide_v8_resumido.txt
 │   │
 │   ├── prompts/
 │   │   ├── method_1_var.txt

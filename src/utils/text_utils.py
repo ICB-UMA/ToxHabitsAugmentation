@@ -6,6 +6,7 @@ This module provides:
 - Functions to parse BRAT .ann files and extract entity annotations.
 - Functions to find sentences containing entities.
 - Functions to format entities back into BRAT .ann file format.
+- Functions to load a complete corpus from a directory.
 """
 
 # --- Local Imports ---
@@ -228,6 +229,67 @@ def get_document_with_entities(
             f.write(marked_text)
     
     return marked_text
+
+
+def load_complete_corpus(
+    data_path: str
+) -> Dict[str, Dict]:
+    """
+    Load a corpus from a directory containing .txt and .ann files.
+    Processes each pair and returns a dictionary with document text,
+    a cleaned version of the text, and parsed entities.
+
+    Args:
+        data_path: Path to the directory with .txt and .ann files
+    
+    Returns:
+        corpus: Dictionary where keys are document names (without extension)
+                and values are dicts with:
+                - text: original text content
+                - clean_text: text with empty lines removed
+                - entities: list of parsed entity dicts
+                - txt_path: path to the .txt file
+                - ann_path: path to the .ann file
+    """
+    # Convert to Path object
+    data_path = Path(data_path)
+    corpus = {}
+    
+    # Find all .ann files
+    ann_files = sorted(data_path.glob("*.ann"))
+    logger.info(f"Found {len(ann_files)} annotation files")
+    
+    for ann_path in ann_files:
+        # Determine corresponding .txt file
+        doc_name = ann_path.stem
+        txt_path = ann_path.with_suffix(".txt")
+        
+        # Check if .txt file exists
+        if not txt_path.exists():
+            logger.warning(f"No matching text file for {ann_path.name}")
+            continue
+        
+        # Read text file
+        with open(txt_path, "r", encoding="utf-8") as f:
+            text = f.read()
+        
+        # Read lines, strip whitespace, and filter out empty lines
+        with open(txt_path, "r", encoding="utf-8") as f:
+            clean_text = "\n".join([line.strip() for line in f if line.strip()])
+        
+        # Parse annotations
+        entities = parse_ann_file(ann_path)
+        
+        # Store in corpus dictionary
+        corpus[doc_name] = {
+            "text": text,
+            "clean_text": clean_text,
+            "entities": entities,
+            "txt_path": str(txt_path),
+            "ann_path": str(ann_path)
+        }
+    
+    return corpus
 
 
 def parse_ann_file(
