@@ -11,4 +11,3 @@ system_prompt: >
 generation_options:
   temperature: 1.0
   max_output_tokens: 1024
-  top_p: 0.9

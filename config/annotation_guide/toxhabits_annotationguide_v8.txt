@@ -646,7 +646,4 @@ Entidad	Código propuesto en SNOMED CT
 732936001 |comprimido (unidad de presentación)|	732986007 |frasco (unidad de presentación)|	228945008 |botellas/día (calificador)|
 733025002 |vaso (unidad de presentación)|	733015007 |cucharada (unidad de presentación)|
 
-
-
-
-
+--- FIN DE LAS GUÍAS DE ANOTACIÓN ---

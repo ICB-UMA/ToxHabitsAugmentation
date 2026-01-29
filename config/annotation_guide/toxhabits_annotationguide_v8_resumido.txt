@@ -206,3 +206,5 @@ Se anotan con esta etiqueta también las formas físicas en la que se consume en
 
 [SUST-7] [forma-informal]
 En ocasiones encontraremos algunas sustancias para las que se menciona su composición química o compuesto principal junto a una manera más común o informal de llamarlas (muchas veces entre paréntesis). Estos casos se anotan siempre separadamente, cómo si se tratara de dos entidades distintas. Por ejemplo, en el caso de: sulfato de anfetamina (speed), tendremos una primera mención=sulfato de anfetamina; y una segunda=speed. Excepción: los fármacos que están formulados conjuntamente en forma de tableta, cápsula, etc., se anotarán de forma única. Por ejemplo, buprenorfina/naloxona=1 sola mención; ingiere tabletas de barbitúricos (=primera mención) y benzodiacepinas (=segunda mención).
+
+--- FIN DE LAS GUÍAS DE ANOTACIÓN ---

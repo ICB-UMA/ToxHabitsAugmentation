@@ -290,8 +290,8 @@ def run_generation_workflow(
 
     # Determine PDF extension based on model
     guidelines = "toxhabits_annotationguide_v8.pdf"
-    if model in OLLAMA_MODELS or model in HUGGINGFACE_MODELS:
-        guidelines = "toxhabits_annotationguide_v8.txt"
+    if model in OLLAMA_MODELS or model in HUGGINGFACE_MODELS or model in OPENAI_MODELS:
+        guidelines = "toxhabits_annotationguide_v8_resumido.txt"
 
     # Convert to Path objects
     original_path = Path(base / "data" / "raw" / "train") if not original_path else Path(original_path)

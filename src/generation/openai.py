@@ -55,8 +55,7 @@ def create_openai_chat_session(
     # Set default generation options if none provided
     default_options = {
         "temperature": 0.7,
-        "max_tokens": 1024,
-        "top_p": 0.9
+        "max_output_tokens": 1024
     }
     final_options = {**default_options, **(generation_options or {})}
 
@@ -66,7 +65,6 @@ def create_openai_chat_session(
         generation_options=final_options,
         chat_history=[],
         openai_first_response=None,
-        pdf_prompt="",
         openai_client = client,
         api_key=api_key,
     )
@@ -84,31 +82,27 @@ def create_openai_chat_session(
                 # Upload the PDF file to OpenAI
                 logger.info(f"Uploading PDF file: {pdf_path}")
                 
-                # Open file in binary mode
-                with open(pdf_file, "rb") as f:
-                    uploaded_file = session.openai_client.files.create(
-                        file=f,
-                        purpose="user_data"
-                    )
+                # Open file and read content
+                with open(pdf_path, 'r', encoding='utf-8') as f:
+                    pdf_text = f.read()
 
-                logger.info(f"PDF uploaded successfully: {uploaded_file.name}")
+                logger.info(f"PDF uploaded successfully: {pdf_path}")
 
                 # Prepare message with attachment reference
-                context_message = session.openai_context + [
-                    {
-                        "role": "developer",
-                        "content": [
-                            {
-                                "type": "input_file",
-                                "file_id": uploaded_file.id,
-                            },
-                            {
-                                "type": "input_text",
-                                "text": developer_prompt,
-                            },
-                        ]
-                    }
-                ]
+                context_message = {
+                    "role": "developer",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": pdf_text,
+                        },
+                        {
+                            "type": "input_text",
+                            "text": developer_prompt,
+                        },
+                    ]
+                }
+                session.openai_context = [context_message]
 
             except Exception as e:
                 logger.error(f"Error processing PDF with OpenAI: {e}")
@@ -124,11 +118,12 @@ def create_openai_chat_session(
                     }
                 ]
             }
+            session.openai_context = [context_message]
 
         # Initial call to establish context
         first_response = client.responses.create(
             model=model_name,
-            input=context_message,
+            input=session.openai_context,
             store=True
         )
         session.openai_first_response = first_response
@@ -166,11 +161,12 @@ def send_openai_message(
     # Add user message to our wrapper history
     user_message = {
         "role": "user",
-        "content": 
+        "content": [
             {
                 "type": "input_text",
                 "text": user_message,
             }
+        ]
     }
     session.chat_history.append(user_message)
     user_message = session.openai_context + [user_message]

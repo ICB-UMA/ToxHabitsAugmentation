@@ -29,6 +29,9 @@ def extract_entities_and_clean_text(
     """
     Extracts all ``[entity_text:entity_type]`` markers from the raw text.
 
+    Args:
+        raw_text: The input text containing entity markers.
+    
     Returns
         The original text with the markers stripped, but the captured
         entity_text kept in place.
