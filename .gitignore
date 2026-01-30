@@ -215,6 +215,11 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Logs
+logs/
+
 # Downloaded datasets
-data/raw/
-data/processed/
+data/
+
+# Results
+results/

@@ -239,9 +239,9 @@ def print_frequency_corpus_report(
     
     # Generate report
     lines.append("CORPUS ENTITIES STATISTICS")
-    lines.append("-" * 50)
+    lines.append("-" * 30)
     lines.append(stats_df.to_markdown(index=False, tablefmt="pipe", colalign=["left", "right"]))
-    lines.append("-" * 50)
+    lines.append("-" * 30)
 
     return lines
 
@@ -366,19 +366,22 @@ def print_frequency_entities_report(
 
     # Prepare stats title
     title = "FREQUENCY OF PARENT ENTITIES"
+    separator = "-" * 57
     if show_children:
         title += " (with Children"
+        separator = "-" * 63
         if show_subchildren:
             title += " and Sub-Children"
         title += ")"
+        separator = "-" * 140
     
     # Generate report
     if lines:
         lines.append("\n")
     lines.append(f"{title}")
-    lines.append("-" * 57)
+    lines.append(separator)
     lines.append(parents_df.to_markdown(index=False, tablefmt="pipe", colalign=align_columns))
-    lines.append("-" * 57)
+    lines.append(separator)
 
     return lines
 
@@ -434,9 +437,9 @@ def print_frequency_texts_report(
     if lines:
         lines.append("\n")
     lines.append(f"TOP {top_n} MOST FREQUENT ENTITY TEXTS")
-    lines.append("-" * 50)
+    lines.append("-" * 67)
     lines.append(texts_df.to_markdown(index=False, tablefmt="pipe", colalign=align_columns))
-    lines.append("-" * 50)
+    lines.append("-" * 67)
 
     return lines
 
@@ -491,9 +494,9 @@ def print_simple_frequency_entities_report(
     if lines:
         lines.append("\n")
     lines.append(f"FREQUENCY BY ENTITY TYPE")
-    lines.append("-" * 50)
+    lines.append("-" * 62)
     lines.append(types_df.to_markdown(index=False, tablefmt="pipe", colalign=align_columns))
-    lines.append("-" * 50)
+    lines.append("-" * 62)
 
     return lines
 
@@ -521,13 +524,13 @@ def print_clinical_term_report(
 
     # Print frequency reports
     lines = print_frequency_corpus_report(entities_frequencies)
-    lines = print_simple_frequency_entities_report(entities_frequencies)
-    lines = print_frequency_texts_report(entities_frequencies, top_n=top_n)
+    lines = print_simple_frequency_entities_report(entities_frequencies, lines)
+    lines = print_frequency_texts_report(entities_frequencies, lines, top_n=top_n)
 
     # Print hierarchical frequency reports
     for option in [(False, False), (True, False), (True, True)]:
         show_children, show_subchildren = option
-        lines = print_frequency_entities_report(entities_frequencies, show_children=show_children, show_subchildren=show_subchildren)
+        lines = print_frequency_entities_report(entities_frequencies, lines, show_children=show_children, show_subchildren=show_subchildren)
     
     # Combine lines into final report
     report = "\n".join(lines)

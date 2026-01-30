@@ -97,6 +97,6 @@ def main(
     except KeyboardInterrupt:
         logger.info("\n\nProcess interrupted by user")
         sys.exit(1)
-    # except Exception as e:
-    #     logger.error(f"\nUnexpected error: {e}")
-    #     sys.exit(1)
+    except Exception as e:
+        logger.error(f"\nUnexpected error: {e}")
+        sys.exit(1)

@@ -1,0 +1,13 @@
+# Required: Exact name of the OpenAI model
+model_name: "gpt-4.1-nano-2025-04-14"
+
+# Optional: System prompt to define model behavior
+system_prompt: >
+  You are an expert linguistic editor specializing in named entity recognition (NER),
+  entity replacement and structured data formatting, following your developer goal.
+  Always follow developer instructions exactly and avoid adding extra information.
+
+# Optional: Generation parameters
+generation_options:
+  temperature: 1.0
+  max_output_tokens: 1024

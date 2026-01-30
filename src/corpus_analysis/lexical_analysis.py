@@ -351,7 +351,7 @@ def print_corpus_analysis_report(
     })
 
     # Append corpus statistics to report
-    lines.append("\nCORPUS STATISTICS:")
+    lines.append("CORPUS STATISTICS:")
     lines.append("-" * 67)
     lines.append(stats_df.to_markdown(index=False, tablefmt="pipe", colalign=["left", "right", "right"]))
     lines.append("-" * 67)

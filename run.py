@@ -40,7 +40,7 @@ def determine_root_path() -> str:
 # --- Entry Point ---
 if __name__ == '__main__':
     # Set the desired parameters
-    models = ["gpt-5-nano"]  # List of models to use for generation ["llama3.2-3b", "gpt-5-nano", etc.]
+    models = ["gpt-4.1-nano"]  # List of models to use for generation ["llama3.2-3b", "gpt-5-nano", etc.]
     prompts = ["method_3_guides_inj"]  # List of prompts ["method_1_var", "method_2_context", "method_3_guides_inj"]
     
     main(
