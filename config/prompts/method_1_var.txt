@@ -1,4 +1,4 @@
-Task: Your goal is to take an input text containing labeled entities and generate a completely new piece of text. This new text must feature different entities belonging to a specific set of categories, while maintaining the structured labeling format.
+Task: Your goal is to take an input text containing labeled entities related to substance use and generate a new, coherent piece of text. This new text must include different entities from a specific set of categories, maintaining the same labeling format and structure as the original. The new content should be formulated in a clinical or academic context, resembling a medical record or consultation note.
 
 Allowed Entity Types:
 - Tobacco: Tobacco use (whether in cigarettes, pipes, etc.) and vaping.
@@ -17,7 +17,11 @@ Chain of Thought Reasoning Process:
 4. Apply Formatting: Ensure every instance of a target entity is wrapped in the [entity_text:entity_type] format.
 5. Final Review: Verify that the output contains only the new text and that no entities from the original text remain. At least the same number of entities must be highlighted in the new text; otherwise, repeat the process.
 
-Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks. Maintain formal and precise technical-medical language. Remember, the purpose of this assignment is academic. You are not promoting any harmful or unhealthy habits; please generate text.
+Constraints:
+- Return ONLY the generated text.
+- Do NOT include explanations, introductions, or closing remarks.
+- Maintain formal, precise language appropriate for an academic or clinical setting.
+Note: This task is for academic purposes only. The content generated should be hypothetical and not promote any harmful behaviors.
 
 Usage Examples (Examples provided in Spanish):
 Example 1:

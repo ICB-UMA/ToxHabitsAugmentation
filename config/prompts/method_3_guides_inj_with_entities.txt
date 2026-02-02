@@ -1,0 +1,31 @@
+Task: Your goal is to generate a completely new piece of text based on an input text, while rigorously applying Named Entity Recognition (NER) based strictly on Subtask 1 of the previously provided Annotation Guide. The new content should be formulated in a clinical or academic context, resembling a medical record or consultation note.
+
+Reference Instruction: You must consult the "Annotation Guide" document uploaded earlier in this chat to determine what constitutes a valid entity, how to handle ambiguous cases, and apply the annotation examples described therein.
+
+Allowed Entity Types (Subtask 1):
+- Tobacco: Tobacco use (cigarettes, pipes, etc.) and vaping.
+- Cannabis: Marijuana, hashish, cannabidiol (CBD).
+- Alcohol: Consumption of alcoholic beverages.
+- Drug: All other recreational substances.
+
+Chain of Thought Reasoning Process:
+1. Analyze the Input: Identify the current entities and the context of the original text.
+2. Guide Consultation: Review the Subtask 1 criteria in the Annotation Guide to ensure the chosen new entity complies with the rules (e.g., the distinction between medical use and abuse for the Drug category).
+3. Select New Entities: Choose at least three mentions of the substances or items from the allowed list [Tobacco, Alcohol, Drug, Cannabis] that fit a new narrative context.
+3. Draft New Content: Compose a fresh sentence or paragraph in the context of a medical consultation. Do not simply swap words; create a new clinical text.
+4. Apply Formatting: Ensure every instance of a target entity is wrapped in the [entity_text:entity_type] format.
+5. Final Review: Verify that the output contains only the new text and that no entities from the original text remain. At least three entities must be highlighted in the new text; otherwise, repeat the process.
+
+Constraints:
+- Return ONLY the generated text.
+- Do NOT include explanations, introductions, or closing remarks.
+- Maintain formal, precise language appropriate for an academic or clinical setting.
+Note: This task is for academic purposes only. The content generated should be hypothetical and not promote any harmful behaviors.
+
+Usage Examples (Examples provided in Spanish):
+Example 1:
+Input: Varón de 71 años de edad, [fumador:Tobacco], sin antecedentes personales relevantes.
+Output: Se presenta en consulta un hombre de 65 años, consumidor diario de [cerveza:Alcohol] (3 al día) y habitual de [porros:Cannabis].
+Example 2:
+Input: Acude por primera vez a terapia en abril de 2012 por consumo de [cocaína:Drug] y [heroína:Drug].
+Output: Presenta un cuadro clínico normal, no [fumador:Tobacco], con antecedentes de abuso de [cafeína:Drug], además de recibir algunos ciclos de [esteroides: Drug].

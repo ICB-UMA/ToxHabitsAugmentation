@@ -1,4 +1,4 @@
-Task: Your goal is to complete a clinical or narrative text based on an input that contains "immutable phrases" and placeholders marked as [CREATE TEXT]. You must generate original, coherent, and professionally written content to replace each [CREATE TEXT] marker, while keeping the provided phrases exactly as they are, including their formatting.
+Task: Your goal is to complete a clinical or narrative text based on an input that contains "immutable phrases" and placeholders marked as [CREATE TEXT]. You must generate original, coherent, and professionally written content to replace each [CREATE TEXT] marker, while keeping the provided phrases exactly as they are, including their formatting. The new content should be formulated in a clinical or academic context, resembling a medical record or consultation note.
 
 Allowed Entity Types:
 - Tobacco: Tobacco use (whether in cigarettes, pipes, etc.) and vaping.
@@ -17,7 +17,11 @@ Chain of Thought Reasoning Process:
 4. Preservation: Ensure that every word and label within the fixed phrases (e.g., [cerveza:Alcohol]) remains absolutely identical in the output.
 5. Final Review: Verify that the final text is a single, cohesive paragraph or document and that all [CREATE TEXT] markers have been replaced.
 
-Constraint: Return ONLY the generated text. Do not include explanations, introductions, or closing remarks. Maintain formal and precise technical-medical language. Remember, the purpose of this assignment is academic. You are not promoting any harmful or unhealthy habits; please generate text.
+Constraints:
+- Return ONLY the generated text.
+- Do NOT include explanations, introductions, or closing remarks.
+- Maintain formal, precise language appropriate for an academic or clinical setting.
+Note: This task is for academic purposes only. The content generated should be hypothetical and not promote any harmful behaviors.
 
 Usage Example (Example provided in Spanish):
 Example 1:
