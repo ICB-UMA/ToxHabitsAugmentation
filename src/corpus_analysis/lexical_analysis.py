@@ -35,6 +35,7 @@ except nltk.downloader.DownloadError:
     # If not found, download the necessary NLTK data packages
     logger.info("NLTK data not found. Downloading 'punkt' and 'stopwords'...")
     nltk.download("punkt", quiet=True)
+    nltk.download("punkt_tab", quiet=True)
     nltk.download("stopwords", quiet=True)
     logger.info("NLTK data download complete.")
 
