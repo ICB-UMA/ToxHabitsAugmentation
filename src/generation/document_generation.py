@@ -177,16 +177,17 @@ def process_sentence_by_sentence(
             generated_text, generated_entities = process_model_response(response)
 
             # Retry conditions
-            if not generated_entities:
-                logger.warning(f"  Warning: No entities extracted for sentence {sentence_name}. Retrying...")
-            elif counter == MAXIMUM_NUMBER_OF_RETRIES:
+            if not generated_entities and counter >= MAXIMUM_NUMBER_OF_RETRIES:
                 logger.error(f"  Error: Maximum retries reached for sentence {sentence_name}. Skipping...")
                 break
+                
+            if not generated_entities:
+                logger.warning(f"  Warning: No entities extracted for sentence {sentence_name}. Retrying...")
+                # Increment retry counter
+                counter += 1
+                continue
             else:
                 break
-
-            # Increment retry counter
-            counter += 1
         
         # Update text with replacement
         text, entities, displacement = generate_augmented_files(

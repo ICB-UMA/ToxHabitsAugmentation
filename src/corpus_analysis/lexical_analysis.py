@@ -31,7 +31,7 @@ try:
     # Check if the required NLTK data packages are already downloaded
     nltk.data.find("tokenizers/punkt")
     nltk.data.find("corpora/stopwords")
-except nltk.downloader.DownloadError:
+except:
     # If not found, download the necessary NLTK data packages
     logger.info("NLTK data not found. Downloading 'punkt' and 'stopwords'...")
     nltk.download("punkt", quiet=True)

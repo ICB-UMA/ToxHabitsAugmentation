@@ -39,7 +39,7 @@ np.random.seed(RANDOM_SEED)
 CHUNK_SIZE = 64 * 1024 * 1024
 
 # Maximum number of retries for generation operations
-MAXIMUM_NUMBER_OF_RETRIES = 9
+MAXIMUM_NUMBER_OF_RETRIES = 3
 
 # Load spaCy model for sentence splitting
 SENTENCE_SPLITTER = spacy.load("es_core_news_sm")

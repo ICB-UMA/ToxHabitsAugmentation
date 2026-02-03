@@ -40,15 +40,15 @@ def determine_root_path() -> str:
 # --- Entry Point ---
 if __name__ == '__main__':
     # Set the desired parameters
-    models = ["gpt-4.1-nano"]  # List of models to use for generation ["llama3.2-3b", "gpt-5-nano", etc.]
-    prompts = ["method_3_guides_inj"]  # List of prompts ["method_1_var", "method_2_context", "method_3_guides_inj"]
+    models = ["llama3.2-3b"]  # List of models to use for generation ["llama3.2-3b", "gpt-4.1-nano", "gpt-5-nano", etc.]
+    prompts = ["method_2_context"]  # List of prompts ["method_1_var", "method_2_context", "method_3_guides_inj"]
     
     main(
         global_root=determine_root_path(),
         download_datasets=False,
         segmentate_documents=False,
-        generate_documents=False,
-        analyze_corpus=True,
+        generate_documents=True,
+        analyze_corpus=False,
         prompts=prompts,
         models=models
     )
