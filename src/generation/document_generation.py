@@ -166,30 +166,22 @@ def process_sentence_by_sentence(
         full_prompt = build_full_prompt(base_prompt, text_prompt)
 
         # Retry logic for empty entity extraction
-        counter = 0
-        
-        while True:
-            # Send to model
-            logger.debug(f"  Sending prompt for sentence: {sentence_name}")
+        for attempt in range(1, MAXIMUM_NUMBER_OF_RETRIES + 1):
+            logger.debug(f"  Sending prompt for sentence: {sentence_name} ({attempt}/{MAXIMUM_NUMBER_OF_RETRIES})")
             response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_text)
-            
-            # Process response
             generated_text, generated_entities = process_model_response(response)
 
-            # Retry conditions
-            if not generated_entities and counter >= MAXIMUM_NUMBER_OF_RETRIES:
-                logger.error(f"  Error: Maximum retries reached for sentence {sentence_name}. Skipping...")
+
+            if generated_entities:
                 break
-                
-            if not generated_entities:
+
+            if attempt < MAXIMUM_NUMBER_OF_RETRIES:
                 logger.warning(f"  Warning: No entities extracted for sentence {sentence_name}. Retrying...")
-                # Increment retry counter
-                counter += 1
-                continue
+
             else:
-                break
-        
-        # Update text with replacement
+                logger.error(f"  Error: Maximum attempts reached for sentence {sentence_name}. Skipping...")
+
+
         text, entities, displacement = generate_augmented_files(
             text,
             entities,
@@ -248,27 +240,20 @@ def process_all_sentences_together(
         full_prompt = build_full_prompt(base_prompt, text_prompt)
     
     # Retry logic for empty entity extraction
-    counter = 0
-    
-    while True:
-        # Send to model
-        logger.debug(f"  Sending combined prompt to model")
+    for attempt in range(1, MAXIMUM_NUMBER_OF_RETRIES + 1):
+        logger.debug(f"  Sending prompt for sentence: {sentence_name} ({attempt}/{MAXIMUM_NUMBER_OF_RETRIES})")
         response = send_message_to_model(session, model, full_prompt, prompt_type, pdf_text)
-
-        # Process response
         generated_text, generated_entities = process_model_response(response)
-    
-        # Retry conditions
-        if not generated_entities:
+
+
+        if generated_entities:
+            break
+
+        if attempt < MAXIMUM_NUMBER_OF_RETRIES:
             logger.warning(f"  Warning: No entities extracted for sentence {sentence_name}. Retrying...")
-        elif counter == MAXIMUM_NUMBER_OF_RETRIES:
-            logger.error(f"  Error: Maximum retries reached for sentence {sentence_name}. Skipping...")
-            break
+
         else:
-            break
-        
-        # Increment retry counter
-        counter += 1
+            logger.error(f"  Error: Maximum attempts reached for sentence {sentence_name}. Skipping...")
 
     # Return response
     return generated_text, generated_entities
