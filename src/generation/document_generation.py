@@ -179,7 +179,7 @@ def process_sentence_by_sentence(
             # Retry conditions
             if not generated_entities:
                 logger.warning(f"  Warning: No entities extracted for sentence {sentence_name}. Retrying...")
-            elif counter >= MAXIMUM_NUMBER_OF_RETRIES:
+            elif counter == MAXIMUM_NUMBER_OF_RETRIES:
                 logger.error(f"  Error: Maximum retries reached for sentence {sentence_name}. Skipping...")
                 break
             else:
@@ -232,6 +232,7 @@ def process_all_sentences_together(
     if prompt_type == "method_4_full_gen":
         # Use original text as example
         full_prompt = build_full_prompt(base_prompt, original_text, label="Input Text of Example")
+        sentence_name = "full_document_example"
     else:  # method_2_context
         # Combine all sentences with separator
         sentence_prompts = [""]
@@ -259,7 +260,7 @@ def process_all_sentences_together(
         # Retry conditions
         if not generated_entities:
             logger.warning(f"  Warning: No entities extracted for sentence {sentence_name}. Retrying...")
-        elif counter >= MAXIMUM_NUMBER_OF_RETRIES:
+        elif counter == MAXIMUM_NUMBER_OF_RETRIES:
             logger.error(f"  Error: Maximum retries reached for sentence {sentence_name}. Skipping...")
             break
         else:

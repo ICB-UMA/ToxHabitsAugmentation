@@ -45,12 +45,14 @@ def download_toxhabits_datasets(
             "record_id": "15425460",
             "path": str(base / "data" / "raw" / "train"),
             "subfolder": "train_annotations",
+            "subfolder-task2": "train_annotations_task_2",
         },
         {
             "name": "Test",
             "record_id": "17566029",
             "path": str(base / "data" / "raw" / "test"),
-            "subfolder": "test_good",
+            "subfolder": "test_annotations",
+            "subfolder-task2": "test_annotations_task_2",
         },
     ]
 
@@ -74,7 +76,7 @@ def download_toxhabits_datasets(
             logger.info("%s: %d files, %.2f MB — Location: %s", dataset["name"], len(files), total_size, path)
 
             # Process downloaded zip files
-            process_dataset_folder(dataset["path"], target_subfolder=dataset["subfolder"])
+            process_dataset_folder(dataset["path"], dataset["subfolder"], dataset["subfolder-task2"])
         else:
             logger.warning("%s: Not downloaded", dataset["name"])
 
@@ -176,7 +178,8 @@ def get_zenodo_files(
 
 def process_dataset_folder(
     folder_path: Union[str, Path], 
-    target_subfolder: str = None
+    target_subfolder: str = None,
+    task_2_folder: str = None
 ) -> None:
     """
     Process all zip files in a folder: extract them and clean up.
@@ -184,6 +187,7 @@ def process_dataset_folder(
     Args:
         folder_path: Path to folder containing zip files
         target_subfolder: Specific subfolder name to look for (optional)
+        task_2_folder: Specific subfolder name for task 2 cleanup (optional)
     """
     folder_path = Path(folder_path)
     
@@ -204,7 +208,7 @@ def process_dataset_folder(
             extract_dir = extract_zip_file(zip_file)
             
             # Clean up the extracted files
-            cleanup_extracted_files(extract_dir, target_subfolder)
+            cleanup_extracted_files(extract_dir, target_subfolder, task_2_folder)
             
             # Remove the original zip file after successful extraction
             zip_file.unlink()

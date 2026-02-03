@@ -35,13 +35,13 @@ from ..imports import (
 def cleanup_extracted_files(
     parent_folder: Union[str, Path], 
     target_subfolder: str = None,
-    task_2_folder: str = "train_annotations_task_2",
+    task_2_folder: str = "annotations_task_2",
     macosx_folder: str = "__MACOSX"
 ) -> None:
     """
     Clean up extracted files by:
     1. Removing __MACOSX folder if it exists
-    2. Removing train_annotations_task_2 folder if it exists
+    2. Removing annotations_task_2 folder if it exists
     3. Moving files from target subfolder to parent folder
     4. Removing the target subfolder
     
@@ -58,7 +58,7 @@ def cleanup_extracted_files(
     # Auto-detect target subfolder if not specified
     if target_subfolder is None:
         # Look for common folder names
-        possible_folders = ["test_good", "train_annotations", "test", "train"]
+        possible_folders = ["test_annotations", "train_annotations", "test", "train"]
         for folder in possible_folders:
             candidate = parent_folder / folder
             if candidate.is_dir():
