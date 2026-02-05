@@ -28,19 +28,6 @@ from ..imports import (
     Optional
 )
 
-# --- NLTK Data Download ---
-try:
-    # Check if the required NLTK data packages are already downloaded
-    nltk.data.find("tokenizers/punkt")
-    nltk.data.find("corpora/stopwords")
-except:
-    # If not found, download the necessary NLTK data packages
-    logger.info("NLTK data not found. Downloading 'punkt' and 'stopwords'...")
-    nltk.download("punkt", quiet=True)
-    nltk.download("punkt_tab", quiet=True)
-    nltk.download("stopwords", quiet=True)
-    logger.info("NLTK data download complete.")
-
 
 # --- Constant Definitions ---
 # Define common negation cues in Spanish

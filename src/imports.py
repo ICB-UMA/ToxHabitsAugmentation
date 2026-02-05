@@ -11,6 +11,7 @@ import json
 import nltk
 import time
 import yaml
+import torch
 import spacy
 import ollama
 import random
@@ -27,6 +28,24 @@ from pathlib import Path
 from datetime import datetime
 from collections import defaultdict, Counter
 from typing import Any, List, Dict, Tuple, Optional, Union
+
+
+# --- NLTK Data Download ---
+try:
+    # Check if the required NLTK data packages are already downloaded
+    nltk.data.find("tokenizers/punkt")
+    nltk.data.find("corpora/stopwords")
+    nltk.data.find("wordnet")
+except:
+    # If not found, download the necessary NLTK data packages
+    print("NLTK data not found. Downloading required packages...")
+    nltk.download("punkt", quiet=True)
+    nltk.download("punkt_tab", quiet=True)
+    nltk.download("stopwords", quiet=True)
+    nltk.download("wordnet", quiet=True)
+    nltk.download("omw-1.4", quiet=True)
+    print("NLTK data download complete.")
+
 
 # --- Constants ---
 
@@ -52,7 +71,7 @@ OPENAI_API_KEY = ""
 GEMINI_MODELS = ["gemini-2.5-flash"]
 OLLAMA_MODELS = ["gemma3-4b", "llama3.2-3b", "ministral3-3b", "qwen3-4b"]
 OPENAI_MODELS = ["gpt-4.1-nano", "gpt-5-nano"]
-HUGGINGFACE_MODELS = ["Llama-Doctor", "Specialized-Model"]
+HUGGINGFACE_MODELS = ["biomistral-7b", "medical-mt5-large"]
 
 # Define augmentation method categories
 SENTENCE_BY_SENTENCE_METHODS = ["method_1_var", "method_3_guides_inj"]

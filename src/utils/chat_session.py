@@ -25,6 +25,8 @@ class LLMChatSession:
     generation_options: Dict[str, Any]
     chat_history: List[Dict[str, str]]
     is_active: bool = True
+    hf_model: Any = None
+    hf_tokenizer: Any = None
     openai_client: Any = None
     openai_context: List[Dict[str, str]] = None
     openai_first_response: Any = None

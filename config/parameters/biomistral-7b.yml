@@ -1,0 +1,16 @@
+# Required: Exact name of the Ollama model (must be pulled first with `ollama pull name`)
+model_name: "BioMistral/BioMistral-7B"
+
+# Optional: System prompt to define model behavior
+system_prompt: >
+  You are an expert linguistic editor specializing in named entity recognition (NER),
+  entity replacement and structured data formatting.
+  Always follow user instructions exactly and avoid adding extra information.
+
+# Optional: Generation parameters (override Ollama defaults)
+generation_options:
+  temperature: 0.7          # Lower = more deterministic output
+  max_tokens: 1024          # Maximum length of generated response
+  top_p: 0.9                # Nucleus sampling threshold
+  do_sample: True           # Whether to use sampling; True enables temperature and top_p sampling
+  pad_token_id: 2           # Padding token ID for the model
