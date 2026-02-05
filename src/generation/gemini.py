@@ -8,7 +8,6 @@ PDF/document attachments.
 """
 
 # --- Third-Party Imports ---
-from http import client
 import mimetypes
 from google import genai
 from google.genai import types
@@ -196,44 +195,49 @@ def send_gemini_message(
     # Add user message to our wrapper history
     session.chat_history.append({"role": "user", "content": user_message})
 
-    try:
-        if stream:
-            # The new SDK returns a generator for stream=True
-            response_stream = session.gemini_client.send_message_stream(user_message)
-            full_response = ""
-            for chunk in response_stream:
-                if chunk.text:
-                    full_response += chunk.text
-                    logger.debug(chunk.text, end="", flush=True)
-        else:
-            if session.gemini_cache:
-                # Use cache instance if available
-                response = session.gemini_client.models.generate_content(
-                    model=session.model_name,
-                    contents=user_message,
-                    config=types.GenerateContentConfig(
-                        cached_content=session.gemini_cache.name,
-                        temperature=session.final_options.get("temperature"),
-                        max_output_tokens=session.final_options.get("max_output_tokens"),
-                        top_p=session.final_options.get("top_p"),
-                        top_k=session.final_options.get("top_k")
-                    )
-                )
+    while True:
+        try:
+            if stream:
+                # The new SDK returns a generator for stream=True
+                response_stream = session.gemini_client.send_message_stream(user_message)
+                full_response = ""
+                for chunk in response_stream:
+                    if chunk.text:
+                        full_response += chunk.text
+                        logger.debug(chunk.text, end="", flush=True)
             else:
-                # Fallback to chat instance
-                response = session.gemini_chat.send_message(user_message)
-            full_response = response.text
-        
-        # Add assistant response to history
-        session.chat_history.append({"role": "assistant", "content": full_response})
-        
-        logger.debug(f"Gemini response received: {len(full_response)} characters")
-        time.sleep(30)  # To avoid rate limits
-        return full_response
+                if session.gemini_cache:
+                    # Use cache instance if available
+                    response = session.gemini_client.models.generate_content(
+                        model=session.model_name,
+                        contents=user_message,
+                        config=types.GenerateContentConfig(
+                            cached_content=session.gemini_cache.name,
+                            temperature=session.final_options.get("temperature"),
+                            max_output_tokens=session.final_options.get("max_output_tokens"),
+                            top_p=session.final_options.get("top_p"),
+                            top_k=session.final_options.get("top_k")
+                        )
+                    )
+                else:
+                    # Fallback to chat instance
+                    response = session.gemini_chat.send_message(user_message)
+                full_response = response.text
+            
+            # Add assistant response to history
+            session.chat_history.append({"role": "assistant", "content": full_response})
+            
+            logger.debug(f"Gemini response received: {len(full_response)} characters")
+            time.sleep(60)  # To avoid rate limits
+            return full_response
     
-    except Exception as e:
-        logger.error(f"Error calling Gemini API: {e}")
-        raise RuntimeError(f"Failed to get response from Gemini: {e}")
+        except genai.errors.ClientError as e:
+            time.sleep(60)  # Wait before retrying
+            logger.warning(f"Gemini ClientError: {e}. Retrying...")
+            continue  # Retry on client errors
+        except Exception as e:
+            logger.error(f"Error calling Gemini API: {e}")
+            raise RuntimeError(f"Failed to get response from Gemini: {e}")
 
 
 def send_gemini_message_with_documents(
@@ -326,6 +330,8 @@ def send_gemini_message_with_documents(
         })
         session.chat_history.append({"role": "assistant", "content": full_response})
         
+        logger.debug(f"Gemini response received: {len(full_response)} characters")
+        time.sleep(60)  # To avoid rate limits
         return full_response
         
     except Exception as e:

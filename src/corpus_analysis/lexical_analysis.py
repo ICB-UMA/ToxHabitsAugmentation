@@ -13,8 +13,10 @@ from spellchecker import SpellChecker
 
 # --- Local Imports ---
 from ..utils.logging import logger
+from ..utils.text_utils import load_complete_corpus
 from ..imports import (
     os,
+    np,
     pd,
     re,
     plt,
@@ -186,11 +188,11 @@ def perform_linguistic_analysis(
     # Avg. Word Length
     avg_word_length = sum(len(word) for word in all_words) / total_words if total_words > 0 else 0.0
 
-    # Top 5 Words
+    # Top n Words
     word_freq = Counter(filtered_words_nonstop_nonnum)
     top_n_words = word_freq.most_common(top_n)
 
-    # Top 5 Abbreviations
+    # Top n Abbreviations
     abbreviation_freq = Counter(abbreviations_found)
     top_n_abbreviations = abbreviation_freq.most_common(top_n)
     
@@ -229,6 +231,93 @@ def perform_linguistic_analysis(
     }
     
     return results
+
+
+def plot_corpus_word_comparison(
+    linguistics_results: list[Dict[str, Any]],
+    prompt_type: str,
+    top_n: int = 15,
+    per_number_words: bool = False,
+    corpus_names: list[str] = None,
+    output_path: Optional[str] = None
+) -> None:
+    """
+    Plots a comparison of word frequencies across corpora.
+    
+    First extracts the top n most frequent words from the base corpus,
+    then plots the frequency of these same words in all corpora.
+    
+    Args:
+        linguistics_results: The list of dictionaries containing linguistic analysis results for each corpus.
+        prompt_type: The type of prompt used for the corpora.
+        top_n: Number of top words to compare.
+        per_number_words: If True, frequencies are normalized per number of words in each corpus.
+        corpus_names: Optional list of names for the corpora, used for the legend.
+        output_path: Optional path to save the plot; if None, the plot is shown instead.
+    """
+    # Set default names if not provided
+    if corpus_names is None:
+        corpus_names = ["Base Corpus"]
+        for i in range(len(augmented_corpus)):
+            corpus_names.append(f"Augmented Corpus {i+1}")
+    
+    # Convert list of word lists into list of frequency dictionaries
+    corpus_dicts = [Counter(linguistic["Non-stop/Non-num Words"]) for linguistic in linguistics_results]
+
+    # Get the top n most frequent words from the base corpus
+    base_corpus = corpus_dicts[0]
+    top_n_words = sorted(base_corpus.items(), key=lambda x: x[1], reverse=True)[:top_n]
+    words = [word for word, _ in top_n_words]
+    
+    # Collect counts for these words from all corpora
+    if per_number_words:
+        # Normalize counts by total number of words in each corpus
+        count_data = [[(corpus.get(word, 0) / sum(corpus.values())) * 1000 for word in words] for corpus in corpus_dicts]
+        plot_title = f"Comparison of top {top_n} words per 1,000 words ({prompt_type})"
+        filename = f"FIG2_per_1000_words.pdf"
+    else:
+        count_data = [[corpus.get(word, 0) for word in words] for corpus in corpus_dicts]
+        plot_title = f"Comparison of top {top_n} words ({prompt_type})"
+        filename = f"FIG2_absolute_counts.pdf"
+    
+    # Create grouped bar chart
+    plt.figure(figsize=(16, 7), dpi=100)
+    bar_width = 0.22
+    x_positions = np.arange(len(words))
+    
+    # Plot bars for each corpus
+    for i in range(len(count_data)):
+        plt.bar(x_positions + i * bar_width,
+                count_data[i],
+                width=bar_width,
+                label=corpus_names[i],
+                alpha=0.85)
+    
+    # Format chart
+    plt.xticks(x_positions + bar_width * 1.5, words, rotation=45, ha='right', fontsize=11)
+    plt.xlabel("Word", fontsize=12)
+    plt.ylabel("Number of occurrences", fontsize=12)
+    plt.title(plot_title, pad=20, fontsize=14)
+    plt.legend(frameon=True, fontsize=11)
+    plt.grid(axis='y', alpha=0.3)
+    plt.tight_layout() # prevents word labels from being cut off
+    
+    if output_path:
+        # Ensure the output directory exists
+        os.makedirs(output_path, exist_ok=True)
+
+        # Save the plot
+        BIGGER_SIZE = 14
+        plt.rc("font", size=BIGGER_SIZE)          # controls default text sizes
+        plt.rc("axes", titlesize=BIGGER_SIZE)     # fontsize of the axes title
+        plt.rc("axes", labelsize=BIGGER_SIZE)     # fontsize of the x and y labels
+        plt.rc("xtick", labelsize=BIGGER_SIZE)    # fontsize of the tick labels
+        plt.rc("ytick", labelsize=BIGGER_SIZE)    # fontsize of the tick labels
+        plt.rc("legend", fontsize=BIGGER_SIZE)    # legend fontsize
+        plt.rc("figure", titlesize=BIGGER_SIZE)   # fontsize of the figure title
+        plt.savefig(os.path.join(output_path, filename), format="pdf", dpi=300)
+    else:
+        plt.show()
 
 
 def plot_word_frequency_distributions(
@@ -385,3 +474,56 @@ def print_corpus_analysis_report(
 
     # Plot word frequency distributions
     plot_word_frequency_distributions(linguistic, output_path)
+
+
+def print_corpus_word_comparison(
+    data_path: str,
+    prompt_type: str,
+    models: list[str],
+    top_n: int = 15,
+    output_path: Optional[str] = None
+) -> None:
+    """
+    Plots a comparison of word frequencies across corpora.
+    
+    First extracts the top n most frequent words from the base corpus,
+    then plots the frequency of these same words in all corpora.
+    
+    Args:
+        data_path: Base path for the corpora.
+        corpora_paths: List of paths to the corpora.
+        top_n: Number of top words to compare.
+        corpus_names: Optional list of names for the corpora, used for the legend.
+        output_path: Optional path to save the plot; if None, the plot is shown instead.
+    """
+    # Define paths and names for corpora to compare
+    corpora_paths = ["raw/train"]
+    corpus_names=["Original"]
+
+    for model in models:
+        # Add the augmented corpus path for this model and prompt to the list of corpora paths to compare
+        augmented_corpus_path = f"augmented/{prompt_type}/{model}"
+        corpora_paths.append(augmented_corpus_path)
+        corpus_names.append(f"{model}")
+    
+    # Initialize corpus dictionaries list
+    linguistics_results = []
+
+    for corpus_path in corpora_paths:
+        # Load the complete corpus for each path and append to the list
+        corpus = load_complete_corpus(data_path=os.path.join(data_path, corpus_path))
+        
+        # Perform linguistic analysis
+        linguistic = perform_linguistic_analysis(corpus, top_n=top_n)
+        linguistics_results.append(linguistic)
+
+    # Plot the comparison of word frequencies across corpora
+    for per_number in [False, True]:
+        plot_corpus_word_comparison(
+            linguistics_results,
+            top_n=top_n,
+            prompt_type=prompt_type,
+            per_number_words=per_number,
+            corpus_names=corpus_names,
+            output_path=output_path
+        )
