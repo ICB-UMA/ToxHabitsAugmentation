@@ -233,7 +233,7 @@ def log_execution_time(logger: logging.Logger):
 
 # Setup logging
 setup_logging(
-    log_level="DEBUG",
+    log_level="INFO",
     log_file="logs/app.log",
     console_output=True
 )

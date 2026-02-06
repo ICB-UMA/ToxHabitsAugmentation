@@ -20,6 +20,7 @@ from .corpus_analysis.clinical_term_analysis import print_clinical_term_report
 from .ingestion.dowload_zenodo import download_toxhabits_datasets
 from .ingestion.document_segmentation import segmentate_toxhabits_documents
 from .generation.document_generation import run_generation_workflow
+from .training.train import train_model
 
 
 def main(
@@ -30,7 +31,8 @@ def main(
     analyze_corpus: bool = False,
     comparise_word_frequencies: bool = False,
     prompts: list[str] = ["method_1_var"],
-    models: list[str] = ["llama3.2-3b"]
+    models: list[str] = ["llama3.2-3b"],
+    train: bool = False,
 ) -> None:
     """
     This function is the main entry point and should be called once to start the server.
@@ -109,10 +111,18 @@ def main(
                     output_path=f"{global_root}/results/word_comparison/{prompt_type}"
                 )
 
+        if train:
+            logger.info("Starting NER training pipeline...")
+
+            train_model(
+                data_path=global_root,
+            )
+
+            logger.info("NER training pipeline completed successfully.")
 
     except KeyboardInterrupt:
         logger.info("\n\nProcess interrupted by user")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"\nUnexpected error: {e}")
+        logger.exception(f"\nUnexpected error: {e}")
         sys.exit(1)

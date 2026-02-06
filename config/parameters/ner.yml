@@ -1,0 +1,17 @@
+ner:
+  prompt: method_1_var
+  llm_model: gpt-41-nano
+  data:
+    raw_train: data/raw/train
+    raw_test: data/raw/test
+    augmented_root: data/augmented
+    use_augmented: true
+  augmented:
+    suffix: _aug
+  ner_model:
+    base_model: EuroBERT/EuroBERT-210m
+    max_length: 8192
+  training:
+    batch_size: 8
+    learning_rate: 5e-5
+    label_pad_id: -100

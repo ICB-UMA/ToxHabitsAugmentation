@@ -51,5 +51,6 @@ if __name__ == '__main__':
         analyze_corpus=False,
         comparise_word_frequencies=False,
         prompts=prompts,
-        models=models
+        models=models,
+        train=True
     )
