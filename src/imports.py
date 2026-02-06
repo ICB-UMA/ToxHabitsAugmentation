@@ -54,6 +54,9 @@ RANDOM_SEED = 26081993
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
+# Device configuration for PyTorch
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
 # Default chunk size for downloads (64 MB)
 CHUNK_SIZE = 64 * 1024 * 1024
 
@@ -64,8 +67,8 @@ MAXIMUM_NUMBER_OF_RETRIES = 3
 SENTENCE_SPLITTER = spacy.load("es_core_news_sm")
 
 # API Keys
-GOOGLE_API_KEY = ""
-OPENAI_API_KEY = ""
+GOOGLE_API_KEY = "AIzaSyD7NGz3TYjSyICvRgb40zBPkEhn-E3nqZY"
+OPENAI_API_KEY = "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"
 
 # Supported Models
 GEMINI_MODELS = ["gemini-2.5-flash"]
