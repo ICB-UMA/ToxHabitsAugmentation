@@ -485,7 +485,7 @@ def print_corpus_word_comparison(
     """
     # Define paths and names for corpora to compare
     corpora_paths = ["raw/train"]
-    corpus_names=["Original"]
+    corpus_names = ["Original"]
 
     for model in models:
         # Add the augmented corpus path for this model and prompt to the list of corpora paths to compare
