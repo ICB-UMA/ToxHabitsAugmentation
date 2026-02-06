@@ -9,7 +9,7 @@ ner:
   augmented:
     suffix: _aug
   ner_model:
-    base_model: EuroBERT/EuroBERT-210m
+    base_model: answerdotai/ModernBERT-base
     max_length: 8192
   training:
     batch_size: 8
