@@ -1,15 +1,21 @@
-from typing import Optional, Dict, Any
-import torch
-import pandas as pd
-import os
-import yaml
-from tqdm.auto import tqdm
-import wandb
-import json
+#!/usr/bin/env python3
+"""
+Training script for NER model on ToxHabits dataset.
 
+This script loads the training and test datasets, prepares them for NER training,
+and trains a simple NER model using the specified configuration. It also evaluates
+the model on the test set and logs the results to Weights & Biases (wandb) for 
+tracking and visualization.
+"""
+
+# --- Third-Party Imports ---
+import wandb
+from tqdm.auto import tqdm
+
+# --- Local Imports ---
 from ..utils.logging import logger
-from ..utils.ner_models import SimpleNERModel
-from ..utils.ner_datasets import TransformersNERDataset
+from ..models.ner_models import SimpleNERModel
+from ..ner.ner_datasets import TransformersNERDataset
 from ..utils.ner_preprocessing import (
     load_texts_to_dict,
     predict_and_extract_entities,
@@ -21,11 +27,27 @@ from ..utils.metrics import (
     compute_span_prf_global,
     compute_span_prf_by_label,
 )
+from ..imports import (
+    os,
+    pd,
+    json,
+    yaml,
+    torch,
+    Dict,
+    Any
+)
+
 
 def train_model(
     data_path: str,
 ) -> None:
-    
+    """
+    Trains a NER model using the specified data and configuration.
+
+    Args:
+        data_path (str): Path to the root data directory containing config and datasets
+    """
+    # Determine the path to the NER configuration file
     config_path = os.path.join(
         data_path,
         "config",
@@ -34,33 +56,41 @@ def train_model(
     )
 
     if not os.path.exists(config_path):
+        # Log an error and raise an exception if the config file is missing
         logger.error(f"NER config file not found: {config_path}")
         raise FileNotFoundError(f"Missing config file: {config_path}")
     
+    # Load the NER configuration from the YAML file
     with open(config_path, "r", encoding="utf-8") as f:
         cfg: Dict[str, Any] = yaml.safe_load(f)
 
     if cfg is None:
+        # Log an error and raise an exception if the config file is empty or malformed
         logger.error("NER config file is empty or malformed.")
         raise ValueError("Invalid ner.yml configuration")
     
     if "ner" not in cfg:
+        # Log an error and raise an exception if the expected 'ner' section is missing in the config
         logger.error("Missing 'ner' section in ner.yml")
         raise KeyError("ner.yml must contain a top-level 'ner' section")
     
+    # Set up Weights & Biases (wandb) environment variables and configuration for logging
     os.environ["WANDB_MODE"] = "online"
     os.environ["WANDB_DIR"] = "/tmp/wandb"         
     os.environ["WANDB_CACHE_DIR"] = "/tmp/wandb"
     
+    # Define tags for wandb based on the configuration and training setup
     wandb_tags = [
-    "ner",
-    "span-level",
-    "iob"
+        "ner",
+        "span-level",
+        "iob"
     ]
 
+    # Create output directory for wandb exports
     out_dir = "/tmp/wandb_exports"
     os.makedirs(out_dir, exist_ok=True)
 
+    # Load raw training and test annotations and texts
     raw_train_path = os.path.join(
         data_path,
         cfg["ner"]["data"]["raw_train"],
@@ -70,11 +100,14 @@ def train_model(
         cfg["ner"]["data"]["raw_test"],
     )
     
+    # Load annotations into DataFrames and create label mappings
     raw_ann_df = load_ann_to_dataframe(raw_train_path)
     raw_test_ann_df = load_ann_to_dataframe(raw_test_path)
 
+    # Create label dictionaries for mapping between label names and IDs
     id2label, label2id = create_label_dicts(raw_ann_df.label.unique().tolist())
 
+    # Load raw texts into dictionaries for easy access during training and evaluation
     train_texts_dict = load_texts_to_dict(raw_train_path)
     test_texts_dict = load_texts_to_dict(raw_test_path)
 
@@ -83,12 +116,13 @@ def train_model(
         f"base_model={cfg['ner']['ner_model']['base_model']} | "
     )
 
-
+    # Initialize the NER model
     ner_model = SimpleNERModel(
         model_name=cfg["ner"]["ner_model"]["base_model"],
         num_tag=len(id2label)
     )
 
+    # Get the tokenizer and maximum token length from the model configuration
     tokenizer = ner_model.get_tokenizer()
     sub_tok_max = ner_model.get_max_len(cfg["ner"]["ner_model"].get("max_length", 128))
 
@@ -108,7 +142,6 @@ def train_model(
         label2id=label2id,
     )
 
-    
     logger.info(f"RAW train documents: {len(train_texts_dict)}")
     logger.info(f"RAW train fragments: {len(raw_train_df)}")
 
@@ -215,8 +248,6 @@ def train_model(
         f"lr={cfg['ner']['training'].get('learning_rate', 5e-5)} | "
         f"label_pad_id={cfg['ner']['training'].get('label_pad_id', -100)}"
     )
-
-
 
     for epoch in range(1, int(cfg['ner']['training'].get('epochs', 25)+1)):
         ner_model.train()
@@ -333,17 +364,17 @@ def train_model(
         f"(TP={global_metrics['tp']} FP={global_metrics['fp']} FN={global_metrics['fn']})"
     )
     wandb.log(
-    {
-        "P-Overall (Test)": global_metrics["precision"],
-        "R-Overall (Test)": global_metrics["recall"],
-        "F1-Overall (Test)": global_metrics["f1"],
-        "TP-Overall (Test)": global_metrics["tp"],
-        "FP-Overall (Test)": global_metrics["fp"],
-        "FN-Overall (Test)": global_metrics["fn"],
-        "epoch": epoch,
-    },
-    step=epoch,
-)
+        {
+            "P-Overall (Test)": global_metrics["precision"],
+            "R-Overall (Test)": global_metrics["recall"],
+            "F1-Overall (Test)": global_metrics["f1"],
+            "TP-Overall (Test)": global_metrics["tp"],
+            "FP-Overall (Test)": global_metrics["fp"],
+            "FN-Overall (Test)": global_metrics["fn"],
+            "epoch": epoch,
+        },
+        step=epoch,
+    )
     by_label_df = compute_span_prf_by_label(
         pred_df=test_entities_df,
         gold_df=raw_test_ann_df,

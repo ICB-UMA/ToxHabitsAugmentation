@@ -1,5 +1,19 @@
+#!/usr/bin/env python3
+"""
+NER Models
+
+This module defines the SimpleNERModel class, which is a PyTorch-based
+Named Entity Recognition (NER) model that utilizes a Hugging Face transformer
+as its backbone. The model is designed to be flexible and can be used with
+various transformer architectures by specifying the model name during initialization.
+"""
+
+# --- Third-Party Imports ---
 from transformers import AutoConfig, AutoModel, AutoTokenizer
-import torch
+
+# --- Local Imports ---
+from ..imports import torch
+
 
 class SimpleNERModel(torch.nn.Module):
     def __init__(self, model_name, num_tag):
