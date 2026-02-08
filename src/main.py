@@ -29,12 +29,12 @@ def main(
     download_datasets: bool = False,
     segmentate_documents: bool = False,
     generate_documents: bool = False,
+    train_models: bool = False,
     analyze_corpus: bool = False,
     comparise_word_frequencies: bool = False,
     similarity_analysis: bool = False,
     prompts: list[str] = ["method_1_var"],
     models: list[str] = ["llama3.2-3b"],
-    train: bool = False,
 ) -> None:
     """
     This function is the main entry point and should be called once to start the server.
@@ -44,6 +44,7 @@ def main(
         download_datasets: Flag to trigger dataset downloading
         segmentate_documents: Flag to trigger document segmentation
         generate_documents: Flag to trigger document generation
+        train_models: Flag to trigger model training
         analyze_corpus: Flag to trigger corpus analysis
         comparise_word_frequencies: Flag to trigger word frequency comparison across corpora
         similarity_analysis: Flag to trigger similarity analysis
@@ -125,7 +126,7 @@ def main(
                 output_path=f"{global_root}/results/similarity_analysis"
             )
 
-        if train:
+        if train_models:
             logger.info("Starting NER training pipeline...")
 
             # Start NER model training

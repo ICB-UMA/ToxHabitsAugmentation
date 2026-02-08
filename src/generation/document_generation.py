@@ -489,6 +489,6 @@ def send_message_to_model(
         if use_pdf:
             # Special handling to send PDF first
             send_ollama_message(session, f"{pdf_text}")
-        return send_huggingface_message(session, prompt)
+        return send_huggingface_message(session, f"{prompt[0]}\n\n{prompt[1]}")
     else:
         raise ValueError(f"Unsupported model: {model}")

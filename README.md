@@ -108,7 +108,8 @@ ToxHabits_Augmentation/
 │   │
 │   ├── ner/                # Regex logic for generating new .ann
 │   │   ├── entity_postprocessing.py
-│   │   └── entity_validation.py
+│   │   ├── entity_validation.py
+│   │   └── ner_datasets.py
 │   │
 │   ├── generation/         # Scripts for APIs (OpenAI, Gemini, Ollama, HF)
 │   │   ├── openai.py
@@ -122,16 +123,18 @@ ToxHabits_Augmentation/
 │   │   └── similarity_analysis.py
 │   │
 │   ├── training/           # Training scripts (PyTorch/Transformers)
+│   │   └── train.py
+│   │
+│   ├── models/             # Model definitions (e.g., SimpleNERModel)
+│   │   └── ner_models.py
 │   │
 │   └── utils/
+│       ├── chat_session.py
 │       ├── file_utils.py
-│       ├── text_utils.py
 │       ├── logging.py
-│       └── license_manager.py
-│
-├── models/
-│   ├── baseline/           # Proprietary models
-│   └── sota_winners/       # Shared Task winning models
+│       ├── metrics.py
+│       ├── ner_preprocessing.py
+│       └── text_utils.py
 │
 ├── notebooks/              # Exploratory analysis and visualisation
 │   ├── exploratory_analysis.ipynb

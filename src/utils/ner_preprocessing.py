@@ -1,27 +1,41 @@
-from nltk.tokenize import sent_tokenize
-from typing import List, Tuple, Dict, Optional
-import pandas as pd
-import os
-import re
+#!/usr/bin/env python3
+"""
+NER Preprocessing Utilities
+
+This module provides functions to preprocess text data for Named Entity Recognition (NER) tasks.
+It includes functions to extract sentence positions, assign IOB tags, tokenize and align data,
+and build tagged DataFrames from raw text and annotations.
+"""
+
+# --- Third-Party Imports ---
 import unicodedata
-from ..utils.logging import logger
-import torch
 from tqdm.auto import tqdm
+from nltk.tokenize import sent_tokenize
+
+# --- Local Imports ---
+from .logging import logger
+from ..imports import (
+    os,
+    pd,
+    re,
+    torch,
+    Dict,
+    List,
+    Tuple,
+    Optional
+)
 
 
 def get_sentence_positions(text: str) -> List[Tuple[int, int]]:
     """
     Extract positions of sentences from a given text.
 
-    Parameters:
-    -----------
-    text : str
-        The input text to be split into sentences.
-
+    Args:
+        text (str): The input text to be processed.
+    
     Returns:
-    --------
-    List[Tuple[int, int]]
-        A list of tuples where each tuple represents the start and end positions of a sentence.
+        List[Tuple[int, int]]: A list of tuples where each tuple contains the start and 
+                               end character positions of a sentence in the text. 
     """
     sentences = sent_tokenize(text)
     positions = []
@@ -48,7 +62,14 @@ def assign_iob_tags(
     If the word start == ann_start -> B-<LABEL>, else -> I-<LABEL>.
     Otherwise -> O.
 
-    Returns a list of label ids aligned with row['start_end'] (word-level).
+    Args:
+        row (pd.Series): A row from the DataFrame containing 'filename' and 'start_end' (word-level offsets).
+        df_ann (pd.DataFrame): DataFrame containing the annotations with columns 'filename',
+                               'start_span', 'end_span', and 'label'.
+        label2id (Dict[str, int]): A dictionary mapping IOB tags to their corresponding integer IDs.
+
+    Returns:
+        List[int]: A list of label ids aligned with row['start_end'] (word-level).
     """
     filename = row["filename"]
     word_ranges = row["start_end"]

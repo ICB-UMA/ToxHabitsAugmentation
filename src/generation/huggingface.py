@@ -95,15 +95,14 @@ def create_huggingface_chat_session(
         model_name=model_name,
         generation_options=final_options,
         chat_history=chat_history,
-        model=model,
-        tokenizer=tokenizer
+        hf_model=model,
+        hf_tokenizer=tokenizer
     )
 
 
 def send_huggingface_message(
     session: LLMChatSession,
-    user_message: str,
-    stream: bool = False
+    user_message: str
 ) -> str:
     """
     Sends a message to the Hugging Face model and returns the response.
@@ -112,69 +111,111 @@ def send_huggingface_message(
     Args:
         session: Active LLMChatSession object
         user_message: User's input message
-        stream: If True, returns incremental responses (default: False)
 
     Returns:
         Full assistant response text
     """
-    if not session.is_active or session.model is None:
+    if not session.is_active or session.hf_model is None:
         logger.error("Cannot send message: Hugging Face session is closed")
         raise RuntimeError("Cannot send message: Hugging Face session is closed")
 
     # Add user message to chat history
     session.chat_history.append({"role": "user", "content": user_message})
 
-    try:
-        # Format the chat history using the model's built-in chat template
-        input_ids = session.tokenizer.apply_chat_template(
-            session.chat_history,
-            add_generation_prompt=True,
-            return_tensors="pt"
-        ).to(session.model.device)
+    # Define the corrected template
+    chat_template_str = (
+        "{% for message in messages %}"
+        "{% if message['role'] == 'user' %}"
+        "{{ '<|user|>\\n' + message['content'] | string + eos_token }}"
+        "{% elif message['role'] == 'system' %}"
+        "{{ '<|system|>\\n' + message['content'] | string + eos_token }}"
+        "{% elif message['role'] == 'assistant' %}"
+        "{{ '<|assistant|>\\n' + message['content'] | string + eos_token }}"
+        "{% endif %}"
+        "{% if loop.last and add_generation_prompt %}"
+        "{{ '<|assistant|>' }}"
+        "{% endif %}"
+        "{% endfor %}"
+    )
 
-        full_response = ""
+    if session.model_name in ["HiTZ/Medical-mT5-large"]:
+        try:
+            # Format the chat history into a plain string
+            formatted_prompt = session.hf_tokenizer.apply_chat_template(
+                session.chat_history,
+                chat_template=chat_template_str,
+                add_generation_prompt=True,
+                tokenize=False  # Get the string, not tokens
+            )
 
-        # Handle streaming responses using TextIteratorStreamer and threading
-        if stream:
-            streamer = TextIteratorStreamer(
-                session.tokenizer, 
-                skip_prompt=True, 
+            # Tokenize the formatted string properly
+            inputs = session.hf_tokenizer(
+                formatted_prompt,
+                return_tensors="pt",
+                padding=True,
+                truncation=True
+            )
+
+            # Move tensors to the correct device
+            input_ids = inputs["input_ids"].to(session.hf_model.device)
+            attention_mask = inputs["attention_mask"].to(session.hf_model.device)
+
+            # Use torch.no_grad() for inference efficiency
+            with torch.no_grad():
+                outputs = session.hf_model.generate(
+                    input_ids=input_ids,           # Pass as keyword argument
+                    attention_mask=attention_mask, # Required for T5/mT5
+                    **session.generation_options
+                )
+
+            # Decode: For Encoder-Decoder models like T5/mT5, the output IS the
+            # complete generated sequence. No need to slice off the prompt.
+            full_response = session.hf_tokenizer.decode(
+                outputs[0],
                 skip_special_tokens=True
             )
-            generation_kwargs = dict(
-                input_ids=input_ids,
-                streamer=streamer,
-                **session.generation_options
+
+            # Add assistant response to chat history
+            session.chat_history.append({"role": "assistant", "content": full_response})
+
+            return full_response
+
+        except Exception as e:
+            logger.error(f"Error during Hugging Face generation: {str(e)}")
+            # It's good practice to include the original exception for debugging
+            raise RuntimeError(f"Generation failed: {str(e)}") from e
+    else:
+        try:
+            # Format the chat history using the model's built-in chat template
+            prompt = session.hf_tokenizer.apply_chat_template(
+                session.chat_history,
+                tokenize=False,
+                add_generation_prompt=True
             )
             
-            # Generation must run in a background thread to yield chunks to the streamer
-            thread = Thread(target=session.model.generate, kwargs=generation_kwargs)
-            thread.start()
+            # Tokenize and generate
+            input_ids = session.hf_tokenizer(prompt, return_tensors="pt").to(session.hf_model.device)
 
-            for chunk in streamer:
-                full_response += chunk
-                logger.debug(chunk, end="", flush=True) 
-            logger.debug() # Print newline when stream finishes
-
-        # Handle standard blocking response
-        else:
-            outputs = session.model.generate(
-                input_ids,
-                **session.generation_options
-            )
-            
+            # Use torch.no_grad() for inference efficiency
+            with torch.no_grad():
+                outputs = session.hf_model.generate(
+                    **input_ids,
+                    **session.generation_options
+                )
+                
             # Slice the output to only get the newly generated tokens (ignore the prompt)
             new_tokens = outputs[0][input_ids.shape[1]:]
-            full_response = session.tokenizer.decode(new_tokens, skip_special_tokens=True)
+            full_response = session.hf_tokenizer.decode(new_tokens, skip_special_tokens=True)
 
-        # Add assistant response to chat history
-        session.chat_history.append({"role": "assistant", "content": full_response})
+            # Add assistant response to chat history
+            session.chat_history.append({"role": "assistant", "content": full_response})
+            print(f"Full response: {full_response}")  # Debug print to verify response content
 
-        return full_response
+            return full_response
 
-    except Exception as e:
-        logger.error(f"Error during Hugging Face generation: {str(e)}")
-        raise RuntimeError(f"Generation failed: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error during Hugging Face generation: {str(e)}")
+            raise RuntimeError(f"Generation failed: {str(e)}")
 
 
 def close_huggingface_session(
@@ -188,10 +229,10 @@ def close_huggingface_session(
     session.chat_history.clear()
     
     # Delete model and tokenizer references
-    del session.model
-    del session.tokenizer
-    session.model = None
-    session.tokenizer = None
+    del session.hf_model
+    del session.hf_tokenizer
+    session.hf_model = None
+    session.hf_tokenizer = None
     
     # Clear CUDA cache if GPU was used
     if torch.cuda.is_available():
