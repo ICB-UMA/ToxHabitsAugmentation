@@ -869,6 +869,9 @@ def load_ann_to_dataframe(
                 spans_raw = " ".join(span_parts[1:])
                 nums = re.findall(r"\d+", spans_raw)
 
+                if len(nums) < 2 or (len(nums) % 2 != 0):
+                    continue
+
                 starts = [int(nums[i]) for i in range(0, len(nums), 2)]
                 ends = [int(nums[i]) for i in range(1, len(nums), 2)]
 

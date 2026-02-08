@@ -25,7 +25,7 @@ from ..utils.metrics import (
 def train_model(
     data_path: str,
 ) -> None:
-    
+    best_f1 = -1.0
     config_path = os.path.join(
         data_path,
         "config",
@@ -59,6 +59,8 @@ def train_model(
     ]
 
     out_dir = "/tmp/wandb_exports"
+    best_ckpt_path = os.path.join(out_dir,"best_model.pt")
+
     os.makedirs(out_dir, exist_ok=True)
 
     raw_train_path = os.path.join(
@@ -119,19 +121,32 @@ def train_model(
             data_path,
             cfg["ner"]["data"]["augmented_root"],
             cfg["ner"]["prompt"],
-            cfg["ner"]["llm_model"],  
+            cfg["ner"]["llm_model"],
         )
         logger.info(f"Augmented train path: {augmented_train_path}")
+
         wandb_tags.extend([
             "augmented",
             f"prompt:{cfg['ner']['prompt']}",
             f"llm:{cfg['ner']['llm_model']}",
         ])
+
         aug_suffix = cfg["ner"]["augmented"].get("suffix", "_aug")
+
         aug_texts = load_texts_to_dict(augmented_train_path)
-        logger.info(f"AUGMENTED train documents: {len(aug_texts)}")
         aug_ann_df = load_ann_to_dataframe(augmented_train_path)
-        aug_ann_df = aug_ann_df[aug_ann_df["label"].isin(valid_labels)].reset_index(drop=True)
+
+        doc_label_sets = aug_ann_df.groupby("filename")["label"].apply(set)
+        fully_valid_set = {
+            fname for fname, labs in doc_label_sets.items()
+            if labs.issubset(valid_labels)
+        }
+
+        fully_valid_set = fully_valid_set.intersection(set(aug_texts.keys()))
+
+        aug_ann_df = aug_ann_df[aug_ann_df["filename"].isin(fully_valid_set)].reset_index(drop=True)
+        aug_texts = {k: v for k, v in aug_texts.items() if k in fully_valid_set}
+
         aug_train_df = build_tagged_df(
             data_path=augmented_train_path,
             tokenizer=tokenizer,
@@ -139,23 +154,30 @@ def train_model(
             ann_df=aug_ann_df,
             label2id=label2id,
         )
-        logger.info(f"AUGMENTED train fragments: {len(aug_train_df)}")
 
+        train_docs_set = set(aug_train_df["filename"].unique().tolist())
+        final_aug_set = fully_valid_set.intersection(train_docs_set)
+
+        aug_train_df = aug_train_df[aug_train_df["filename"].isin(final_aug_set)].reset_index(drop=True)
+        aug_ann_df = aug_ann_df[aug_ann_df["filename"].isin(final_aug_set)].reset_index(drop=True)
+        aug_texts = {k: v for k, v in aug_texts.items() if k in final_aug_set}
+
+        aug_ann_df["filename"] = aug_ann_df["filename"].astype(str) + aug_suffix
         aug_train_df["filename"] = aug_train_df["filename"].astype(str) + aug_suffix
         aug_texts = {f"{k}{aug_suffix}": v for k, v in aug_texts.items()}
-        train_texts_dict.update(aug_texts)
+
         before = len(raw_train_df)
         raw_train_df = pd.concat([raw_train_df, aug_train_df], ignore_index=True)
         raw_ann_df = pd.concat([raw_ann_df, aug_ann_df], ignore_index=True)
+        train_texts_dict.update(aug_texts)
         after = len(raw_train_df)
 
+        logger.info(f"AUGMENTED docs added (final): {len(final_aug_set)}")
+        logger.info(f"AUGMENTED train fragments: {len(aug_train_df)}")
         logger.info(
             f"RAW train fragments after adding augmented: {before} -> {after} (+{after - before})"
-        )
-        logger.info(
-            f"Unique documents in merged train_df: {raw_train_df['filename'].nunique()}"
-        )
-        logger.info(raw_train_df .head())
+    )
+
     else:
         augmented_train_path = None
         wandb_tags.append("no-augmented")
@@ -289,6 +311,21 @@ def train_model(
         logger.info("[TRAIN] Per-label metrics:")
         logger.info("\n" + by_label_df.to_string(index=False))
 
+        current_f1 = float(global_metrics["f1"])
+        if current_f1 > best_f1:
+            best_f1 = current_f1
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "best_f1": best_f1,
+                    "model_state_dict": ner_model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "cfg": cfg,
+                    "label2id": label2id,
+                    "id2label": id2label,
+                },
+                best_ckpt_path,)
+            wandb.save(best_ckpt_path)
 
     pred_path = os.path.join(out_dir, "train_predictions.tsv")
     gold_path = os.path.join(out_dir, "train_gold.tsv")
@@ -311,6 +348,13 @@ def train_model(
     with open(label2id_path, "w", encoding="utf-8") as f:
         json.dump(label2id, f, ensure_ascii=False, indent=2)
 
+    if os.path.exists(best_ckpt_path):
+        ckpt = torch.load(best_ckpt_path, map_location=device)
+        ner_model.load_state_dict(ckpt["model_state_dict"])
+        ner_model.to(device)
+        logger.info(f"Loaded BEST checkpoint from epoch={ckpt.get('epoch')} with best_f1={ckpt.get('best_f1')}")
+    else:
+        logger.warning("Best checkpoint not found; using last epoch weights.")
 
     test_entities_df = predict_and_extract_entities(
         df=raw_test_df,
@@ -366,6 +410,24 @@ def train_model(
     test_entities_df.to_csv(test_pred_path, sep="\t", index=False)
     raw_test_ann_df.to_csv(test_gold_path, sep="\t", index=False)
 
+    if cfg["ner"]["data"].get("use_augmented", False):
+        results_dir = os.path.join(
+            "results",
+            "ner",
+            cfg["ner"]["llm_model"],
+            cfg["ner"]["prompt"],
+            cfg["ner"]["ner_model"]["base_model"].replace("/", "_"),
+        )
+    else:
+        results_dir = os.path.join(
+            "results",
+            "ner",
+            "no-augmented",
+            cfg["ner"]["ner_model"]["base_model"].replace("/", "_"),
+        )
+
+    os.makedirs(results_dir, exist_ok=True)
+    logger.info(f"Saving NER predictions to: {results_dir}")
     artifact.add_file(test_gold_path)
     artifact.add_file(test_pred_path)
 

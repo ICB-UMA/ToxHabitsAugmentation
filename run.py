@@ -50,7 +50,7 @@ if __name__ == '__main__':
         generate_documents=False,
         analyze_corpus=False,
         comparise_word_frequencies=False,
-        similarity_analysis=True,
+        similarity_analysis=False,
         prompts=prompts,
         models=models,
         train=True

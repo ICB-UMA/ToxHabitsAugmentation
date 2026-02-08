@@ -1,5 +1,5 @@
 ner:
-  prompt: method_1_var
+  prompt: method_4_full_gen
   llm_model: gpt-41-nano
   data:
     raw_train: data/raw/train
@@ -9,9 +9,10 @@ ner:
   augmented:
     suffix: _aug
   ner_model:
-    base_model: answerdotai/ModernBERT-base
-    max_length: 8192
+    base_model: PlanTL-GOB-ES/roberta-base-biomedical-clinical-es
+    max_length: 256
   training:
     batch_size: 8
     learning_rate: 5e-5
     label_pad_id: -100
+    epochs: 25

@@ -3,6 +3,11 @@ set -e
 
 NER_YML="config/parameters/ner.yml"
 
+LLMS=(
+  "llama32-3b"
+  "gpt-41-nano"
+)
+
 PROMPTS=(
   "method_1_var"
   "method_2_context"
@@ -11,26 +16,73 @@ PROMPTS=(
 )
 
 echo "========================================="
-echo "Running NER experiments for all prompts"
+echo "Running NER experiments"
 echo "Config file: ${NER_YML}"
 echo "========================================="
 
-for PROMPT in "${PROMPTS[@]}"; do
+# -------------------------------------------------
+# BASELINE (NO AUGMENTATION)
+# -------------------------------------------------
+echo
+echo "#########################################"
+echo "Running baseline (no augmentation)"
+echo "#########################################"
+
+python - <<EOF
+import yaml
+
+path = "${NER_YML}"
+
+with open(path, "r") as f:
+    cfg = yaml.safe_load(f)
+
+cfg["ner"]["data"]["use_augmented"] = False
+
+with open(path, "w") as f:
+    yaml.safe_dump(cfg, f, sort_keys=False)
+EOF
+
+echo "Launching training (no-augmented)..."
+python run.py
+
+# -------------------------------------------------
+# AUGMENTED RUNS
+# -------------------------------------------------
+for LLM in "${LLMS[@]}"; do
   echo
-  echo "-----------------------------------------"
-  echo "Setting ner.prompt = ${PROMPT}"
-  echo "-----------------------------------------"
+  echo "#########################################"
+  echo "LLM MODEL: ${LLM}"
+  echo "#########################################"
 
-  yq -i ".ner.prompt = \"${PROMPT}\"" "${NER_YML}"
+  for PROMPT in "${PROMPTS[@]}"; do
+    echo
+    echo "-----------------------------------------"
+    echo "PROMPT: ${PROMPT} | LLM: ${LLM}"
+    echo "-----------------------------------------"
 
-  echo "Current ner.prompt:"
-  yq ".ner.prompt" "${NER_YML}"
+    python - <<EOF
+import yaml
 
-  echo "Launching training..."
-  python run.py
+path = "${NER_YML}"
 
-  echo "Finished run for prompt: ${PROMPT}"
+with open(path, "r") as f:
+    cfg = yaml.safe_load(f)
+
+cfg["ner"]["prompt"] = "${PROMPT}"
+cfg["ner"]["llm_model"] = "${LLM}"
+cfg["ner"]["data"]["use_augmented"] = True
+
+with open(path, "w") as f:
+    yaml.safe_dump(cfg, f, sort_keys=False)
+EOF
+
+    echo "Launching training (augmented)..."
+    python run.py
+
+    echo "Finished run: PROMPT=${PROMPT} | LLM=${LLM}"
+  done
 done
+
 
 echo
 echo "========================================="
