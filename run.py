@@ -40,7 +40,7 @@ def determine_root_path() -> str:
 # --- Entry Point ---
 if __name__ == '__main__':
     # Set the desired parameters
-    models = ["medical-mt5-large"]  # List of models to use for generation ["llama3.2-3b", "gpt-4.1-nano", "gemini-2.5-flash" etc.]
+    models = ["biomistral-7b"]  # List of models to use for generation ["llama3.2-3b", "gpt-4.1-nano", "gemini-2.5-flash" etc.]
     prompts = ["method_1_var", "method_2_context", "method_3_guides_inj", "method_4_full_gen"]  # List of prompts ["method_1_var", "method_2_context", "method_3_guides_inj", "method_4_full_gen"]
     
     main(

@@ -10,7 +10,7 @@ system_prompt: >
 # Optional: Generation parameters (override Ollama defaults)
 generation_options:
   temperature: 0.7          # Lower = more deterministic output
-  max_tokens: 1024          # Maximum length of generated response
+  max_new_tokens: 2048      # Maximum length of generated response
   top_p: 0.9                # Nucleus sampling threshold
   do_sample: True           # Whether to use sampling; True enables temperature and top_p sampling
   pad_token_id: 2           # Padding token ID for the model
