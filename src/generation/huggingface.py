@@ -187,16 +187,19 @@ def send_huggingface_message(
     else:
         try:
             # Format the chat history using the model's built-in chat template
-            input_ids = session.hf_tokenizer.apply_chat_template(
+            prompt = session.hf_tokenizer.apply_chat_template(
                 session.chat_history,
-                add_generation_prompt=True,
-                return_tensors="pt"
-            ).to(session.hf_model.device)
+                tokenize=False,
+                add_generation_prompt=True
+            )
+            
+            # Tokenize and generate
+            input_ids = session.hf_tokenizer(prompt, return_tensors="pt").to(session.hf_model.device)
 
             # Use torch.no_grad() for inference efficiency
             with torch.no_grad():
                 outputs = session.hf_model.generate(
-                    input_ids,
+                    **input_ids,
                     **session.generation_options
                 )
                 
