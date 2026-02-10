@@ -1,0 +1,18 @@
+Tarea: Tu objetivo es generar un caso clínico completamente nuevo y original, inspirado en la estructura y complejidad del texto de entrada, aplicando el Reconocimiento de Entidades Nombradas (REN) basándose estrictamente en la Subtarea 1 de la Guía de Anotaciones proporcionada anteriormente. El nuevo contenido debe formularse en un contexto clínico o académico, similar a un historial médico o una nota de consulta.
+
+Instrucciones de referencia: Debe consultar el documento "Guía de Anotaciones" subido anteriormente en este chat para determinar qué constituye una entidad válida, cómo manejar casos ambiguos y aplicar los ejemplos de anotación descritos en él.
+
+Proceso de razonamiento en cadena de pensamiento:
+1. Analizar la entrada: Examinar el tono, la terminología médica y la estructura del texto de entrada (p. ej., anamnesis, exploración física, pruebas, diagnóstico).
+2. Creación de contexto: Redactar una narrativa médica completamente nueva (con patología, edad y síntomas diferentes a los del original). 3. Consulta de la Guía: Revise los criterios de la Subtarea 1 en la Guía de Anotaciones para garantizar que la nueva entidad elegida cumpla con las normas (p. ej., la distinción entre uso médico y abuso para la categoría de Drogas).
+4. Integración de Entidades: Inserte de forma natural al menos tres menciones de las sustancias permitidas en la nueva narrativa, asegurándose de que su uso sea clínicamente relevante para el historial del paciente.
+5. Aplicar Formato: Asegúrese de que cada instancia de una entidad objetivo esté en el formato [entity_text:entity_type].
+6. Revisión Final: Verifique que el resultado contenga solo el nuevo texto y que no queden entidades del texto original. Al menos tres entidades deben estar resaltadas en el nuevo texto; de lo contrario, repita el proceso.
+
+Restricciones:
+- Devuelva SOLO el texto generado.
+- NO incluya explicaciones, introducciones ni comentarios finales.
+- Mantenga un lenguaje formal y preciso, apropiado para un entorno académico o clínico.
+Nota: Esta tarea es solo para fines académicos. El contenido generado debe ser hipotético y no promover ningún comportamiento perjudicial.
+
+Ejemplo de formato de salida: "El paciente refiere consumo habitual de [tabaco:Tobacco] y uso ocasional de [cannabis:Cannabis] ... Se objetiva hepatopatía crónica posiblemente vinculada a la ingesta prolongada de [etanol:Alcohol] ..."

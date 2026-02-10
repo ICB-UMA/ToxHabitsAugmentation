@@ -1,0 +1,31 @@
+Tarea: Tu objetivo es completar un texto clínico o narrativo basado en una entrada que contiene "frases inmutables" y marcadores marcados como [CREATE TEXT]. Debe generar contenido original, coherente y profesional para reemplazar cada marcador [CREATE TEXT], manteniendo las frases proporcionadas exactamente como están, incluyendo su formato. El nuevo contenido debe formularse en un contexto clínico o académico, similar a un historial médico o una nota de consulta.
+
+Tipos de entidades permitidas:
+- Tabaco: Consumo de tabaco (ya sea en cigarrillos, pipas, etc.) y vapeo.
+- Cannabis: Marihuana, hachís, cannabidiol (CBD).
+- Alcohol: Consumo de bebidas alcohólicas.
+- Drogas: Todas las demás sustancias recreativas, incluyendo cocaína, heroína, psicodélicos y otras drogas. Algunas consideraciones adicionales sobre este tipo de evento:
+a) Incluimos sustancias estimulantes en esta categoría, incluyendo bebidas energéticas y cafeína.
+b) Los medicamentos psicotrópicos solo se registran cuando el abuso es evidente y no son recetados por un profesional de la salud.
+c) Los esteroides anabólicos también se registran cuando se usan sin receta para mejorar el rendimiento deportivo.
+d) Los agonistas/antagonistas opioides, como la metadona, la naloxona y la buprenorfina, casi siempre se registrarán, ya que indican 1. que la persona está en tratamiento por adicción o 2. que existe abuso debido a la falta de otros opioides.
+
+Proceso de razonamiento en cadena de pensamiento:
+1. Analizar la entrada: Identificar las frases fijas (que suelen contener entidades etiquetadas) y la posición de los marcadores [CREATE TEXT].
+2. Contextualizar: Determinar el escenario más probable (p. ej., una evaluación psiquiátrica, un informe de alta médica, una entrevista clínica) con base en las frases fijas.
+3. Generar narrativa: Redactar un texto clínico realista para cada sección [CREATE TEXT]. Este texto debe conectar las frases fijas de forma natural, manteniendo una terminología profesional y una fluidez lógica.
+4. Conservación: Asegurarse de que cada palabra y etiqueta dentro de las frases fijas (p. ej., [cerveza:Alcohol]) permanezca absolutamente idéntica en el texto final.
+5. Revisión final: Verificar que el texto final sea un único párrafo o documento coherente y que se hayan reemplazado todos los marcadores [CREATE TEXT].
+
+Restricciones:
+- Devuelva SOLO el texto generado.
+- NO incluya explicaciones, introducciones ni comentarios finales.
+- Mantenga un lenguaje formal y preciso, apropiado para un entorno académico o clínico.
+Nota: Esta tarea es solo para fines académicos. El contenido generado debe ser hipotético y no promover ningún comportamiento perjudicial.
+
+Ejemplos de uso:
+Ejemplo 1:
+Entrada: Varón de 71 años de edad, [fumador: Tabaco], sin antecedentes personales relevantes.
+Salida: Hombre de 71 años, consumidor diario de [cerveza: Alcohol] (3 al día) y habitual de [porros: Cannabis].
+Entrada: [CREATE TEXT] La persona suele tomar [cerveza:Alcohol] varias veces al día. [CREATE TEXT] [Exfumador:Tobacco], 10 al día. [CREATE TEXT]
+Salida: Paciente que acude a consulta por sintomatología ansioso-depresiva de larga evolución. Refiere que, debido al estrés laboral. La persona suele tomar [cerveza:Alcohol] varias veces al día. No se detectan factores de riesgo cardiovascular ni alergias medicamentosas. [Exfumador:Tobacco], 10 al día. Este problema comenzó tras presentar una crisis de ansiedad en la calle. Desde entonces ha ido evitando salir solo hasta el punto de no salir de casa en la última semana. Se recomienda seguimiento por parte de la unidad de conductas adictivas y reevaluación en tres semanas.
