@@ -289,8 +289,13 @@ def run_generation_workflow(
     prompts_path = Path(base / "config" / "prompts") if not prompts_path else Path(prompts_path)
     yaml_file_path = Path(base / "config" / "parameters") if not yaml_file_path else Path(yaml_file_path)
     
+    # Determine prompt suffix based on model type (Spanish prompts for HuggingFace models)
+    prompt_suffix = ""
+    if model in HUGGINGFACE_MODELS:
+        prompt_suffix = "_spanish"
+
     # Load prompt
-    prompt_file = os.path.join(prompts_path, f"{prompt_type}.txt")
+    prompt_file = os.path.join(prompts_path, f"{prompt_type}{prompt_suffix}.txt")
     if not os.path.exists(prompt_file):
         raise FileNotFoundError(f"Prompt file {prompt_file} not found.")
     with open(prompt_file, 'r', encoding='utf-8') as f:
@@ -488,7 +493,7 @@ def send_message_to_model(
     elif model in HUGGINGFACE_MODELS:
         if use_pdf:
             # Special handling to send PDF first
-            send_ollama_message(session, f"{pdf_text}")
+            send_huggingface_message(session, f"{pdf_text}")
         return send_huggingface_message(session, f"{prompt[0]}\n\n{prompt[1]}")
     else:
         raise ValueError(f"Unsupported model: {model}")

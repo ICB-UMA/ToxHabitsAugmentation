@@ -7,12 +7,10 @@ with Hugging Face models, send messages, and handle responses.
 """
 
 # --- Third-Party Imports ---
-from threading import Thread
 from transformers import (
-    AutoModel,
+    AutoModelForCausalLM,
     AutoModelForSeq2SeqLM,
-    AutoTokenizer,
-    TextIteratorStreamer
+    AutoTokenizer
 )
 
 # --- Local Imports ---
@@ -63,7 +61,10 @@ def create_huggingface_chat_session(
     try:
         # Load Tokenizer
         logger.info(f"Loading tokenizer and model for {model_name}...")
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            use_safetensors=False
+        )
 
         if model_name in ["HiTZ/Medical-mT5-large"]:
             # This model is an encoder-decoder architecture, so we use AutoModelForSeq2SeqLM
@@ -71,14 +72,16 @@ def create_huggingface_chat_session(
                 model_name,
                 device_map=device,
                 trust_remote_code=True,
+                use_safetensors=False,
                 torch_dtype=torch.float16 if device == "cuda" else torch.float32
             )
         else:
-            # For decoder-only models (like LLaMA/Mistral), we use AutoModel
-            model = AutoModel.from_pretrained(
+            # For decoder-only models (like LLaMA/Mistral), we use AutoModelForCausalLM
+            model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 device_map=device,
                 trust_remote_code=True,
+                use_safetensors=False,
                 torch_dtype=torch.float16 if device == "cuda" else torch.float32
             )
 
@@ -88,8 +91,6 @@ def create_huggingface_chat_session(
 
     # Initialize chat history
     chat_history = []
-    if system_prompt:
-        chat_history.append({"role": "system", "content": system_prompt})
 
     return LLMChatSession(
         model_name=model_name,
@@ -122,28 +123,11 @@ def send_huggingface_message(
     # Add user message to chat history
     session.chat_history.append({"role": "user", "content": user_message})
 
-    # Define the corrected template
-    chat_template_str = (
-        "{% for message in messages %}"
-        "{% if message['role'] == 'user' %}"
-        "{{ '<|user|>\\n' + message['content'] | string + eos_token }}"
-        "{% elif message['role'] == 'system' %}"
-        "{{ '<|system|>\\n' + message['content'] | string + eos_token }}"
-        "{% elif message['role'] == 'assistant' %}"
-        "{{ '<|assistant|>\\n' + message['content'] | string + eos_token }}"
-        "{% endif %}"
-        "{% if loop.last and add_generation_prompt %}"
-        "{{ '<|assistant|>' }}"
-        "{% endif %}"
-        "{% endfor %}"
-    )
-
     if session.model_name in ["HiTZ/Medical-mT5-large"]:
         try:
             # Format the chat history into a plain string
             formatted_prompt = session.hf_tokenizer.apply_chat_template(
                 session.chat_history,
-                chat_template=chat_template_str,
                 add_generation_prompt=True,
                 tokenize=False  # Get the string, not tokens
             )
@@ -192,19 +176,25 @@ def send_huggingface_message(
                 tokenize=False,
                 add_generation_prompt=True
             )
-            
-            # Tokenize and generate
-            input_ids = session.hf_tokenizer(prompt, return_tensors="pt").to(session.hf_model.device)
 
-            # Use torch.no_grad() for inference efficiency
+            # Tokenize - returns dict with 'input_ids', 'attention_mask', etc.
+            inputs_ids = session.hf_tokenizer(prompt, return_tensors="pt")
+            
+            # Move to model's device
+            inputs_ids = {k: v.to(session.hf_model.device) for k, v in inputs_ids.items()}
+            
+            # Get input length for slicing later
+            input_length = inputs_ids["input_ids"].shape[1]
+
+            # Generate
             with torch.no_grad():
                 outputs = session.hf_model.generate(
-                    **input_ids,
+                    **inputs_ids,
                     **session.generation_options
                 )
                 
-            # Slice the output to only get the newly generated tokens (ignore the prompt)
-            new_tokens = outputs[0][input_ids.shape[1]:]
+            # Slice to get only new tokens - FIX: use input_length, not input_ids.shape[1]
+            new_tokens = outputs[0][input_length:]
             full_response = session.hf_tokenizer.decode(new_tokens, skip_special_tokens=True)
 
             # Add assistant response to chat history
