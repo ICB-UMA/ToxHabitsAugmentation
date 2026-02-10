@@ -493,7 +493,7 @@ def send_message_to_model(
     elif model in HUGGINGFACE_MODELS:
         if use_pdf:
             # Special handling to send PDF first
-            send_huggingface_message(session, f"{pdf_text}")
+            send_huggingface_message(session, f"{pdf_text}", first_message=True)
         return send_huggingface_message(session, f"{prompt[0]}\n\n{prompt[1]}")
     else:
         raise ValueError(f"Unsupported model: {model}")

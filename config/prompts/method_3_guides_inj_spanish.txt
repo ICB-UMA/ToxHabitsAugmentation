@@ -6,7 +6,7 @@ Proceso de razonamiento en cadena de pensamiento:
 1. Analizar la entrada: Identificar las entidades actuales, la extensión y el contexto del texto original.
 2. Consulta de la guía: Revisar los criterios de la Subtarea 1 en la Guía de Anotaciones para garantizar que la nueva entidad elegida cumpla con las normas (por ejemplo, la distinción entre uso médico y abuso para la categoría de drogas). 3. Seleccionar nuevas entidades: Elija al menos el mismo número de menciones del texto original de las sustancias o elementos de la lista permitida que se ajusten al nuevo contexto narrativo.
 4. Redactar nuevo contenido: Redacte una oración o un párrafo en el contexto de una consulta médica. Cree un nuevo texto clínico en el mismo contexto, con una estructura y extensión similares.
-5. Aplicar formato: Asegúrese de que cada instancia de una entidad de destino tenga el formato [entity_text:entity_type].
+5. Aplicar formato: Asegúrese de que cada instancia de una entidad de destino tenga el formato [entidad texto:entidad tipo].
 6. Revisión final: Verifique que el resultado contenga solo el nuevo texto y que no queden entidades del texto original. Debe resaltarse al menos el mismo número de entidades en el nuevo texto; de lo contrario, repita el proceso.
 
 Restricciones:

@@ -21,7 +21,8 @@ from ..imports import (
     Dict,
     Optional,
     Any,
-    RANDOM_SEED
+    RANDOM_SEED,
+    DEVICE
 )
 
 
@@ -29,7 +30,6 @@ def create_huggingface_chat_session(
     model_name: str,
     generation_options: Optional[Dict[str, Any]] = None,
     system_prompt: Optional[str] = None,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
 ) -> LLMChatSession:
     """
     Creates a persistent Hugging Face chat session with configured parameters.
@@ -38,7 +38,6 @@ def create_huggingface_chat_session(
         model_name: Name of the Hugging Face model to use (e.g. "llama3", "mistral")
         generation_options: Dictionary of Hugging Face generation parameters (temperature, max_tokens, etc.)
         system_prompt: Optional system prompt to define the model's behavior
-        device: Device to load the model on ("cuda" or "cpu")
 
     Returns:
         Initialized LLMChatSession object
@@ -70,19 +69,19 @@ def create_huggingface_chat_session(
             # This model is an encoder-decoder architecture, so we use AutoModelForSeq2SeqLM
             model = AutoModelForSeq2SeqLM.from_pretrained(
                 model_name,
-                device_map=device,
+                device_map=DEVICE,
                 trust_remote_code=True,
                 use_safetensors=False,
-                torch_dtype=torch.float16 if device == "cuda" else torch.float32
+                torch_dtype=torch.float16 if DEVICE != "cpu" else torch.float32
             )
         else:
             # For decoder-only models (like LLaMA/Mistral), we use AutoModelForCausalLM
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
-                device_map=device,
+                device_map=DEVICE,
                 trust_remote_code=True,
                 use_safetensors=False,
-                torch_dtype=torch.float16 if device == "cuda" else torch.float32
+                torch_dtype=torch.float16 if DEVICE != "cpu" else torch.float32
             )
 
     except Exception as e:
@@ -103,7 +102,8 @@ def create_huggingface_chat_session(
 
 def send_huggingface_message(
     session: LLMChatSession,
-    user_message: str
+    user_message: str,
+    first_message: bool = False,
 ) -> str:
     """
     Sends a message to the Hugging Face model and returns the response.
@@ -112,6 +112,7 @@ def send_huggingface_message(
     Args:
         session: Active LLMChatSession object
         user_message: User's input message
+        first_message: Indicates if this is the first message in the session
 
     Returns:
         Full assistant response text
@@ -197,9 +198,12 @@ def send_huggingface_message(
             new_tokens = outputs[0][input_length:]
             full_response = session.hf_tokenizer.decode(new_tokens, skip_special_tokens=True)
 
-            # Add assistant response to chat history
-            session.chat_history.append({"role": "assistant", "content": full_response})
-            print(f"Full response: {full_response}")  # Debug print to verify response content
+            if first_message and not session.chat_history:
+                # Add assistant response to chat history
+                session.chat_history.append({"role": "assistant", "content": full_response})
+            else:
+                # Flush chat history after each message to save memory
+                session.chat_history = []
 
             return full_response
 
