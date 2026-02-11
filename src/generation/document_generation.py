@@ -493,7 +493,8 @@ def send_message_to_model(
     elif model in HUGGINGFACE_MODELS:
         if use_pdf:
             # Special handling to send PDF first
-            send_huggingface_message(session, f"{pdf_text}", first_message=True)
+            session.chat_history.append({"role": "user", "content": pdf_text})
+            session.chat_history.append({"role": "assistant", "content": "Recibido el texto del PDF para el contexto de la guia de anotacion."})
         return send_huggingface_message(session, f"{prompt[0]}\n\n{prompt[1]}")
     else:
         raise ValueError(f"Unsupported model: {model}")

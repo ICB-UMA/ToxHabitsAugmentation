@@ -203,7 +203,7 @@ def get_document_with_entities(
         text = f.read()
 
     # Parse the ann file and return a list of entities
-    entities = parse_ann_file(ann_path)
+    entities, _ = parse_ann_file(ann_path)
     
     # Sort entities by start position in descending order
     # This prevents index shifting when we replace text from the end backwards
@@ -282,7 +282,7 @@ def load_complete_corpus(
             clean_text = "\n".join([line.strip() for line in f if line.strip()])
         
         # Parse annotations
-        entities = parse_ann_file(ann_path)
+        entities, errors = parse_ann_file(ann_path)
         
         # Store in corpus dictionary
         corpus[doc_name] = {
@@ -290,7 +290,8 @@ def load_complete_corpus(
             "clean_text": clean_text,
             "entities": entities,
             "txt_path": str(txt_path),
-            "ann_path": str(ann_path)
+            "ann_path": str(ann_path),
+            "entity_errors": errors
         }
     
     return corpus
@@ -316,6 +317,7 @@ def parse_ann_file(
         List of entity dicts associated with the .ann file
     """
     entities = []
+    entity_errors = 0
 
     # Check if file exists
     if not ann_path.exists():
@@ -356,8 +358,9 @@ def parse_ann_file(
                             'text': text
                         })
                 except (ValueError, IndexError) as e:
+                    entity_errors += 1
                     logger.warning(f"Warning: Could not parse line {line_num} in {ann_path}: {line}")
                     continue
 
     # Sort entities by start offset
-    return sorted(entities, key=lambda x: x['start'])
+    return sorted(entities, key=lambda x: x['start']), entity_errors

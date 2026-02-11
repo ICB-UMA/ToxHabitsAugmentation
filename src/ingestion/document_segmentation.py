@@ -126,7 +126,7 @@ def segmentate_toxhabits_documents(
             continue
         
         # Parse annotation file
-        entities = parse_ann_file(ann_file)
+        entities, _ = parse_ann_file(ann_file)
         
         if not entities:
             logger.info(f"No entities found in {ann_file.name}, skipping")

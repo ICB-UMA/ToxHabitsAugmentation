@@ -20,6 +20,7 @@ from ..imports import (
     pd,
     re,
     plt,
+    json,
     nltk,
     Any,
     Dict,
@@ -261,11 +262,11 @@ def plot_corpus_word_comparison(
         # Normalize counts by total number of words in each corpus
         count_data = [[(corpus.get(word, 0) / sum(corpus.values())) * 1000 for word in words] for corpus in corpus_dicts]
         plot_title = f"Comparison of top {top_n} words per 1,000 words ({prompt_type})"
-        filename = f"FIG2_per_1000_words.pdf"
+        filename = f"FIG2_per_1000_words.jpg"
     else:
         count_data = [[corpus.get(word, 0) for word in words] for corpus in corpus_dicts]
         plot_title = f"Comparison of top {top_n} words ({prompt_type})"
-        filename = f"FIG2_absolute_counts.pdf"
+        filename = f"FIG2_absolute_counts.jpg"
     
     # Create grouped bar chart
     plt.figure(figsize=(16, 7), dpi=100)
@@ -302,7 +303,7 @@ def plot_corpus_word_comparison(
         plt.rc("ytick", labelsize=BIGGER_SIZE)    # fontsize of the tick labels
         plt.rc("legend", fontsize=BIGGER_SIZE)    # legend fontsize
         plt.rc("figure", titlesize=BIGGER_SIZE)   # fontsize of the figure title
-        plt.savefig(os.path.join(output_path, filename), format="pdf", dpi=300)
+        plt.savefig(os.path.join(output_path, filename), format="jpg", dpi=300)
     else:
         plt.show()
 
@@ -326,10 +327,10 @@ def plot_word_frequency_distributions(
     
     # Plotting options
     options = [
-        ("(a) All Words", frequency_all_words, "FIG1a.pdf"),
-        ("(b) Non-stop Words", frequency_nonstop_words, "FIG1b.pdf"),
-        ("(c) Non-stop/Non-num Words", frequency_nonstop_nonnum_words, "FIG1c.pdf"),
-        ("(d) Misspelled Words", frequency_misspelled_words, "FIG1d.pdf")
+        ("(a) All Words", frequency_all_words, "FIG1a.jpg"),
+        ("(b) Non-stop Words", frequency_nonstop_words, "FIG1b.jpg"),
+        ("(c) Non-stop/Non-num Words", frequency_nonstop_nonnum_words, "FIG1c.jpg"),
+        ("(d) Misspelled Words", frequency_misspelled_words, "FIG1d.jpg")
     ]
 
     for title, freq_counter, filename in options:
@@ -352,7 +353,7 @@ def plot_word_frequency_distributions(
             plt.rc("ytick", labelsize=BIGGER_SIZE)    # fontsize of the tick labels
             plt.rc("legend", fontsize=BIGGER_SIZE)    # legend fontsize
             plt.rc("figure", titlesize=BIGGER_SIZE)   # fontsize of the figure title
-            plt.savefig(os.path.join(output_path, filename), format="pdf", dpi=300)
+            plt.savefig(os.path.join(output_path, filename), format="jpg", dpi=300)
         else:
             plt.show()
     
@@ -363,7 +364,7 @@ def print_corpus_analysis_report(
     corpus: Dict[str, Dict],
     top_n: int = 10,
     output_path: Optional[str] = None,
-    output_file: Optional[str] = "linguistic_analysis_report.txt"
+    output_file: Optional[str] = "linguistic_analysis_report"
 ):
     """
     Prints the linguistic analysis results in a structured, human-readable format.
@@ -455,8 +456,9 @@ def print_corpus_analysis_report(
 
         # Save report to txt file
         output_file = os.path.join(output_path, output_file)
-        with open(output_file, "w", encoding="utf-8") as f:
+        with open(output_file + ".txt", "w", encoding="utf-8") as f:
             f.write(report)
+        stats_df.to_csv(output_file + ".csv", index=False, sep=";")
         logger.info(f"Report of validation saved to {output_file}")
 
     # Plot word frequency distributions

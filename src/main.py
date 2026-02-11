@@ -82,11 +82,17 @@ def main(
                     run_generation_workflow(prompt_type, model, global_root)
 
         if analyze_corpus:
-            for corpus_type in ['train', 'test']:
+            # Define paths for original and augmented corpora
+            corpus_paths = [(f"{global_root}/data/raw/train", "train"), (f"{global_root}/data/raw/test", "test")]
+            for prompt_type in prompts:
+                for model in models:
+                    corpus_paths.append((f"{global_root}/data/augmented/{prompt_type}/{model}", f"{model}_{prompt_type}"))
+
+            for data_path, corpus_type in corpus_paths:
                 logger.info(f"\n\nStarting analysis for {corpus_type} corpus...\n")
 
                 # Load complete corpus
-                corpus = load_complete_corpus(data_path=f"{global_root}/data/raw/{corpus_type}")
+                corpus = load_complete_corpus(data_path=data_path)
 
                 # Start corpus analysis
                 print_corpus_analysis_report(

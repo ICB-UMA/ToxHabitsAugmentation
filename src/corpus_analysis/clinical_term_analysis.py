@@ -43,6 +43,8 @@ def analyze_frequencies(
     text_freq = Counter()
     type_freq = Counter()
     text_type_freq = Counter()
+    total_errors = 0
+    total_documents_with_errors = 0
 
     # Parent entity counters
     parent_freq = Counter() 
@@ -60,6 +62,11 @@ def analyze_frequencies(
         doc_texts = set()  # Track unique texts in this document
         doc_entities = set()  # Track unique entities in this document
         doc_parents = set()  # Track unique parents in this document
+        
+        # Count annotation errors
+        total_errors += data.get("entity_errors", 0)
+        if data.get("entity_errors", 0) > 0:
+            total_documents_with_errors += 1
         
         for entity in data["entities"]:
             # Normalize text to lowercase for frequency counting
@@ -125,7 +132,9 @@ def analyze_frequencies(
             "unique_types": len(type_freq),
             "unique_parents": len(parent_freq),
             "avg_entities_per_doc": total_entities / num_docs if num_docs > 0 else 0,
-            "num_documents": num_docs
+            "num_documents": num_docs,
+            "total_errors": total_errors,
+            "documents_with_errors": total_documents_with_errors
         }
     }
 
@@ -165,7 +174,7 @@ def export_parent_hierarchy(
 def plot_entity_frequencies(
     freqs: Dict,
     output_path: Optional[str] = None,
-    output_file: str = "entity_frequencies.pdf",
+    output_file: str = "entity_frequencies.jpg",
     top_n: int = 10
 ) -> None:
     """
@@ -204,7 +213,8 @@ def plot_entity_frequencies(
 
 def print_frequency_corpus_report(
     freqs: Dict,
-    lines: Optional[list] = []
+    lines: Optional[list] = [],
+    output_path: Optional[str] = None
 ):
     """ 
     Print frequency analysis of entities by parent type with hierarchical display.
@@ -212,6 +222,7 @@ def print_frequency_corpus_report(
     Args:
         freqs: Frequency analysis results from analyze_frequencies function.
         lines: List to append report lines to.
+        output_path: Optional path to save the report as a text file.
 
     Returns:
         lines: List of strings representing the report lines.
@@ -226,16 +237,24 @@ def print_frequency_corpus_report(
             "Total entities",
             "Unique texts",
             "Unique types",
-            "Avg entities/doc"
+            "Avg entities/doc",
+            "Annotation errors",
+            "Documents with errors"
         ],
         "Value": [
             stats["num_documents"],
             stats["total_entities"],
             stats["unique_texts"],
             stats["unique_types"],
-            f"{stats['avg_entities_per_doc']:.2f}"
+            f"{stats['avg_entities_per_doc']:.2f}",
+            stats["total_errors"],
+            stats["documents_with_errors"]
         ]
     })
+
+    if output_path:
+        # Save corpus stats to CSV
+        stats_df.to_csv(os.path.join(output_path, "frequency_corpus_report.csv"), index=False, sep=";")
     
     # Generate report
     lines.append("CORPUS ENTITIES STATISTICS")
@@ -389,7 +408,8 @@ def print_frequency_entities_report(
 def print_frequency_texts_report(
     freqs: Dict,
     lines: Optional[list] = [],
-    top_n: int = 10
+    top_n: int = 10,
+    output_path: Optional[str] = None
 ):
     """ 
     Print frequency analysis results for texts with high-quality Jupyter Notebook tables.
@@ -398,6 +418,7 @@ def print_frequency_texts_report(
         freqs: Frequency analysis results from analyze_frequencies function.
         lines: List to append report lines to.
         top_n: Number of top texts to display.
+        output_path: Optional path to save the report as a CSV file.
 
     Returns:
         lines: List of strings representing the report lines.
@@ -424,7 +445,11 @@ def print_frequency_texts_report(
     
     # Create DataFrame
     texts_df = pd.DataFrame(top_texts_data)
-
+    
+    if output_path:
+        # Save corpus stats to CSV
+        texts_df.to_csv(os.path.join(output_path, "frequency_texts_report.csv"), index=False, sep=";")
+    
     # Determine left-aligned columns
     align_columns = []
     for col in texts_df.columns:
@@ -446,7 +471,8 @@ def print_frequency_texts_report(
 
 def print_simple_frequency_entities_report(
     freqs: Dict,
-    lines: Optional[list] = []
+    lines: Optional[list] = [],
+    output_path: Optional[str] = None
 ):
     """ 
     Print frequency analysis results with high-quality Jupyter Notebook tables.
@@ -454,7 +480,8 @@ def print_simple_frequency_entities_report(
     Args:
         freqs: Frequency analysis results from analyze_frequencies function.
         lines: List to append report lines to.
-
+        output_path: Optional path to save the report as a CSV file.
+    
     Returns:
         lines: List of strings representing the report lines.
     """
@@ -481,6 +508,10 @@ def print_simple_frequency_entities_report(
     
     # Create DataFrame
     types_df = pd.DataFrame(type_data)
+    
+    if output_path:
+        # Save corpus stats to CSV
+        types_df.to_csv(os.path.join(output_path, "frequency_entities_report.csv"), index=False, sep=";")
     
     # Determine left-aligned columns
     align_columns = []
@@ -514,7 +545,6 @@ def print_clinical_term_report(
                 contain entity data for each document.
         top_n: Number of top items to display for frequency-based metrics.
         output_path: If provided, the path to save the report.
-        output_file: If provided, the name of the file to save the report.
     """
     # Analyze frequencies
     entities_frequencies = analyze_frequencies(corpus)
@@ -523,9 +553,9 @@ def print_clinical_term_report(
     errors = validate_entities(corpus)
 
     # Print frequency reports
-    lines = print_frequency_corpus_report(entities_frequencies)
-    lines = print_simple_frequency_entities_report(entities_frequencies, lines)
-    lines = print_frequency_texts_report(entities_frequencies, lines, top_n=top_n)
+    lines = print_frequency_corpus_report(entities_frequencies, output_path=output_path)
+    lines = print_simple_frequency_entities_report(entities_frequencies, lines, output_path=output_path)
+    lines = print_frequency_texts_report(entities_frequencies, lines, top_n=top_n, output_path=output_path)
 
     # Print hierarchical frequency reports
     for option in [(False, False), (True, False), (True, True)]:
