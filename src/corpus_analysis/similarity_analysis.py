@@ -15,6 +15,7 @@ from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sentence_transformers import SentenceTransformer, util
+from transformers import AutoTokenizer, AutoModel
 
 # --- Local Imports ---
 from ..utils.logging import logger
@@ -23,6 +24,7 @@ from ..imports import (
     os,
     pd,
     nltk,
+    torch,
     Dict,
     Optional,
     DEVICE
@@ -35,6 +37,8 @@ def initialize_similarity_models():
 
     Returns:
         sbert_model: The loaded Sentence-BERT model for embedding generation.
+        bert_model: The loaded BERT model for BERTScore calculations.
+        bert_tokenizer: The tokenizer corresponding to the BERT model.
         rouge_scorer_instance: The initialized ROUGE scorer for ROUGE metric calculations.
     """
     logger.info(f"Loading models on device: {DEVICE}...")
@@ -42,10 +46,15 @@ def initialize_similarity_models():
     # Initialize Sentence-BERT
     sbert_model = SentenceTransformer('all-MiniLM-L6-v2', device=DEVICE)
 
+    # Initialize BERT model and tokenizer for BERTScore
+    bert_tokenizer = AutoTokenizer.from_pretrained("PlanTL-GOB-ES/bsc-bio-ehr-es")
+    bert_model = AutoModel.from_pretrained("PlanTL-GOB-ES/bsc-bio-ehr-es")
+    bert_model = bert_model.to(DEVICE)
+
     # Initialize ROUGE scorer (1, 2, L)
     rouge_scorer_instance = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
 
-    return sbert_model, rouge_scorer_instance
+    return sbert_model, bert_model, bert_tokenizer, rouge_scorer_instance
 
 
 def calculate_bleu(
@@ -169,6 +178,114 @@ def calculate_tfidf_cosine(
     return cosine_similarity_value
 
 
+def get_embeddings(
+    text: str,
+    tokenizer: AutoTokenizer,
+    model: AutoModel,
+) -> torch.Tensor:
+    """
+    Generate token embeddings for the input text using BERT.
+
+    Args:
+        text: Input text or batch of sentences.
+        tokenizer: The tokenizer corresponding to the BERT model.
+        model: The BERT model to use for generating embeddings.
+
+    Returns:
+        torch.Tensor: Token embeddings with shape (batch_size, seq_len, hidden_dim).
+    """
+    # Tokenize input text
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+    
+    # Move inputs to GPU if available
+    inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
+
+    # Compute embeddings without gradient calculation
+    with torch.no_grad():
+        outputs = model(**inputs, output_hidden_states=True)
+    
+    # Return last hidden states (token-level embeddings)
+    # Asegurarse de que sea un tensor de PyTorch
+    embeddings = outputs.last_hidden_state
+    
+    return embeddings
+
+
+def bert_cosine_similarity(
+    generated_embeddings: torch.Tensor,
+    reference_embeddings: torch.Tensor
+) -> torch.Tensor:
+    """
+    Compute cosine similarity between two sets of embeddings.
+
+    Args:
+        generated_embeddings: Embeddings of candidate tokens.
+        reference_embeddings: Embeddings of reference tokens.
+
+    Returns:
+        torch.Tensor: Cosine similarity matrix.
+    """
+    # Asegurarse de que son tensores de PyTorch
+    if not isinstance(generated_embeddings, torch.Tensor):
+        generated_embeddings = torch.tensor(generated_embeddings.toarray() if hasattr(generated_embeddings, 'toarray') else generated_embeddings)
+    
+    if not isinstance(reference_embeddings, torch.Tensor):
+        reference_embeddings = torch.tensor(reference_embeddings.toarray() if hasattr(reference_embeddings, 'toarray') else reference_embeddings)
+    
+    # Mover a la misma ubicación si es necesario
+    generated_embeddings = generated_embeddings.to(DEVICE)
+    reference_embeddings = reference_embeddings.to(DEVICE)
+    
+    # Normalize embeddings along the hidden dimension
+    generated_embeddings = torch.nn.functional.normalize(generated_embeddings, p=2, dim=-1)
+    reference_embeddings = torch.nn.functional.normalize(reference_embeddings, p=2, dim=-1)
+
+    # Compute similarity using batched matrix multiplication
+    return torch.bmm(generated_embeddings, reference_embeddings.transpose(1, 2))
+
+
+def bert_score(
+    candidate: str,
+    reference: str,
+    bert_tokenizer: AutoTokenizer,
+    bert_model: AutoModel
+) -> Dict[str, float]:
+    """
+    Compute BERTScore (Precision, Recall, F1) between a candidate and a reference sentence.
+
+    Args:
+        candidate: Candidate sentence.
+        reference: Reference sentence.
+        bert_tokenizer: The tokenizer corresponding to the BERT model.
+        bert_model: The BERT model to use for generating embeddings.
+
+    Returns:
+        dict: Dictionary containing precision, recall, and F1 scores.
+    """
+    # Get token embeddings for candidate and reference
+    candidate_embeddings = get_embeddings(candidate, bert_tokenizer, bert_model)
+    reference_embeddings = get_embeddings(reference, bert_tokenizer, bert_model)
+
+    # Compute cosine similarity matrix
+    similarity_matrix = bert_cosine_similarity(candidate_embeddings, reference_embeddings)
+
+    # Calculate precision, recall, and F1 scores
+    precision = similarity_matrix.max(dim=2)[0].mean()
+    recall = similarity_matrix.max(dim=1)[0].mean()
+
+    if precision + recall == 0:
+        f1_score = torch.tensor(0.0)
+    else:
+        f1_score = 2 * (precision * recall) / (precision + recall)
+
+    # Return scores as a dictionary
+    return {
+        "precision": precision.item(),
+        "recall": recall.item(),
+        "f1_score": f1_score.item(),
+    }
+
+
 def print_similarity_report(
     data_path: str,
     prompts: list[str],
@@ -190,7 +307,7 @@ def print_similarity_report(
     base_corpus = load_complete_corpus(data_path=os.path.join(data_path, base_path))
 
     # Initialize models once for efficiency
-    sbert_model, rouge_scorer_instance = initialize_similarity_models()
+    sbert_model, bert_model, bert_tokenizer, rouge_scorer_instance = initialize_similarity_models()
     general_results = pd.DataFrame([])
 
     for model in models:
@@ -229,6 +346,9 @@ def print_similarity_report(
                 # Sentence-BERT
                 sbert_cos = calculate_sbert_similarity(reference_text, generated_text, sbert_model)
 
+                # BERTScore
+                bert_scores = bert_score(generated_text, reference_text, bert_tokenizer, bert_model)
+                
                 augmented_results.append({
                     "Filename": filename,
                     "Model": model,
@@ -239,7 +359,10 @@ def print_similarity_report(
                     "ROUGE-1": rouge_scores["ROUGE-1"],
                     "ROUGE-2": rouge_scores["ROUGE-2"],
                     "ROUGE-L": rouge_scores["ROUGE-L"],
-                    "SBERT_Cosine": sbert_cos
+                    "SBERT_Cosine": sbert_cos,
+                    "BERTScore_Precision": bert_scores["precision"],
+                    "BERTScore_Recall": bert_scores["recall"],
+                    "BERTScore_F1": bert_scores["f1_score"]
                 })
 
             # Create DataFrame

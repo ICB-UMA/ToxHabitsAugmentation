@@ -402,29 +402,30 @@ def print_corpus_analysis_report(
         ],
         "Absolute": [
             linguistic["Total Documents"],
+            f"{linguistic['Total Sentences']:,}",
+            f"{linguistic['Avg. Sentence Length (words)']:.2f}",
+            f"{linguistic['Avg. Word Length (characters)']:.2f}",
             f"{linguistic['Total Word Count']:,}",
             f"{linguistic['Total Unique Words']:,}",
-            f"{linguistic['Total Sentences']:,}",
             f"{linguistic['Total Non-stop Words Count']:,}",
             f"{linguistic['Total Unique Non-stop Words']:,}",
             f"{linguistic['Total Non-stop/Non-num Words Count']:,}",
             f"{linguistic['Total Unique Non-stop/Non-num Words']:,}",
-            f"{linguistic['Avg. Sentence Length (words)']:.2f}",
-            f"{linguistic['Avg. Word Length (characters)']:.2f}",
             f"{linguistic['Lexical Diversity']:.4f}",
             f"{linguistic['Negation Cue Frequency (per 1k words)']:.2f}",
             f"{linguistic['Misspelling Rate (%)']:.2f}"
         ],
         "Relative": [
             "-",
+            f"{linguistic['Total Sentences']/total_documents:.2f}",
+            "-", "-",
             f"{linguistic['Total Word Count']/total_documents:.2f}",
             f"{linguistic['Total Unique Words']/total_documents:.2f}",
-            f"{linguistic['Total Sentences']/total_documents:.2f}",
             f"{linguistic['Total Non-stop Words Count']/total_documents:.2f}",
             f"{linguistic['Total Unique Non-stop Words']/total_documents:.2f}",
             f"{linguistic['Total Non-stop/Non-num Words Count']/total_documents:.2f}",
             f"{linguistic['Total Unique Non-stop/Non-num Words']/total_documents:.2f}",
-            "-", "-", "-", "-", "-"
+            "-", "-", "-"
         ]
     })
 
