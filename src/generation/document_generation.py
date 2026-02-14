@@ -136,7 +136,7 @@ def process_sentence_by_sentence(
 ) -> Tuple[str, List[Dict]]:
     """
     Processes each sentence individually and replaces in original text.
-    Used by method_1_var and method_3_guides_inj.
+    Used by method_1_var and method_2_guides_inj.
     
     Args:
         session: Active chat session
@@ -206,7 +206,7 @@ def process_all_sentences_together(
 ) -> Tuple[str, List[Dict]]:
     """
     Processes all sentences together in a single prompt.
-    Used by method_2_context and method_4_full_gen.
+    Used by method_3_context and method_4_full_gen.
     
     Args:
         session: Active chat session
@@ -226,7 +226,7 @@ def process_all_sentences_together(
         # Use original text as example
         full_prompt = build_full_prompt(base_prompt, original_text, label="Input Text of Example")
         sentence_name = "full_document_example"
-    else:  # method_2_context
+    else:  # method_3_context
         # Combine all sentences with separator
         sentence_prompts = [""]
         for ledger_entry in extracted_sentences:
@@ -303,7 +303,7 @@ def run_generation_workflow(
 
     # Load PDF text if needed
     pdf_text = None
-    if prompt_type in ["method_3_guides_inj", "method_4_full_gen"] and model in OLLAMA_MODELS + HUGGINGFACE_MODELS:
+    if prompt_type in ["method_2_guides_inj", "method_4_full_gen"] and model in OLLAMA_MODELS + HUGGINGFACE_MODELS:
         # Load PDF text for these methods and models
         with open(pdf_path, 'r', encoding='utf-8') as f:
             pdf_text = f.read()
@@ -327,7 +327,7 @@ def run_generation_workflow(
 
     # Load and create LLM session
     if model in OPENAI_MODELS:
-        if prompt_type not in ["method_3_guides_inj", "method_4_full_gen"]:
+        if prompt_type not in ["method_2_guides_inj", "method_4_full_gen"]:
             # Special handling to not send PDF first
             pdf_path = None
 
@@ -339,7 +339,7 @@ def run_generation_workflow(
             pdf_path=pdf_path
         )
     elif model in GEMINI_MODELS:
-        if prompt_type not in ["method_3_guides_inj", "method_4_full_gen"]:
+        if prompt_type not in ["method_2_guides_inj", "method_4_full_gen"]:
             # Special handling to not send PDF first
             pdf_path = None
 
@@ -351,7 +351,7 @@ def run_generation_workflow(
             pdf_path=pdf_path
         )
     elif model in OLLAMA_MODELS:
-        if prompt_type not in ["method_3_guides_inj", "method_4_full_gen"]:
+        if prompt_type not in ["method_2_guides_inj", "method_4_full_gen"]:
             # Special handling to not send PDF first
             pdf_text = None
 
@@ -361,7 +361,7 @@ def run_generation_workflow(
             system_prompt=model_params["system_prompt"]
         )
     elif model in HUGGINGFACE_MODELS:
-        if prompt_type not in ["method_3_guides_inj", "method_4_full_gen"]:
+        if prompt_type not in ["method_2_guides_inj", "method_4_full_gen"]:
             # Special handling to not send PDF first
             pdf_text = None
 
@@ -478,7 +478,7 @@ def send_message_to_model(
         Model response text
     """
     # Determine if PDF should be used
-    use_pdf = prompt_type in ["method_3_guides_inj", "method_4_full_gen"] and pdf_text
+    use_pdf = prompt_type in ["method_2_guides_inj", "method_4_full_gen"] and pdf_text
     
     # Route to appropriate model
     if model in OPENAI_MODELS:

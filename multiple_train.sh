@@ -10,8 +10,8 @@ LLMS=(
 
 PROMPTS=(
   "method_1_var"
-  "method_2_context"
-  "method_3_guides_inj"
+  "method_2_guides_inj"
+  "method_3_context"
   "method_4_full_gen"
 )
 

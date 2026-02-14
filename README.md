@@ -46,8 +46,8 @@ Obtaining the `TRAIN` and `TEST` datasets from Zenodo.
 Four methods will be implemented using a multi-model architecture (GPT, Gemini, Ollama, HuggingFace):
 
 * **M1 (Sentence Variation):** Paraphrasing with changes to specific entities.
-* **M2 (Contextualisation):** Generation of a full document around an original seed sentence.
-* **M3 (Injection by Guidelines):** Creation of new sentences based strictly on annotation guidelines and insertion into existing documents.
+* **M2 (Injection by Guidelines):** Creation of new sentences based strictly on annotation guidelines and insertion into existing documents.
+* **M3 (Contextualisation):** Generation of a full document around an original seed sentence.
 * **M4 (*Ex Nihilo* Generation):** Creation of complete documents based on annotation guidelines or Shared Task rules.
 * **Offset Validation:** In all cases, the `.ann` labelling will be generated using regular expressions (Regex) to ensure technical precision over the generated text. Generative AI models do not usually specify these offsets accurately.
 
@@ -95,8 +95,8 @@ ToxHabits_Augmentation/
 │   │   │   ├── gemini/
 │   │   │   ├── ollama/
 │   │   │   └── huggingface/
-│   │   ├── method_2_context/
-│   │   ├── method_3_guides_inj/
+│   │   ├── method_2_guides_inj/
+│   │   ├── method_3_context/
 │   │   └── method_4_full_gen/
 │   │
 │   └── analysis/           # Results of linguistic analyses (CSV/JSON)
@@ -149,8 +149,8 @@ ToxHabits_Augmentation/
 │   │
 │   ├── prompts/
 │   │   ├── method_1_var.txt
-│   │   ├── method_2_context.txt
-│   │   ├── method_3_guides_inj.txt
+│   │   ├── method_2_guides_inj.txt
+│   │   ├── method_3_context.txt
 │   │   └── method_4_full_gen.txt
 │   │
 │   └── parameters/

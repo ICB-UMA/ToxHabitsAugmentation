@@ -298,7 +298,7 @@ def print_similarity_report(
 
     Args:
         data_path: The base path where the corpora are located.
-        prompts: List of prompt methods to evaluate (e.g., ["method_1_var", "method_2_context"]).
+        prompts: List of prompt methods to evaluate (e.g., ["method_1_var", "method_3_context"]).
         models: List of models to evaluate (e.g., ["llama3.2-3b", "gpt-4.1-nano"]).
         output_path: Optional path to save the resulting DataFrame as a CSV file.
     """

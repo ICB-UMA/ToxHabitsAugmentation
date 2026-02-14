@@ -77,8 +77,8 @@ OPENAI_MODELS = ["gpt-4.1-nano", "gpt-5-nano"]
 HUGGINGFACE_MODELS = ["biomistral-7b", "medical-mt5-large"]
 
 # Define augmentation method categories
-SENTENCE_BY_SENTENCE_METHODS = ["method_1_var", "method_3_guides_inj"]
-ALL_TOGETHER_METHODS = ["method_2_context", "method_4_full_gen"]
+SENTENCE_BY_SENTENCE_METHODS = ["method_1_var", "method_2_guides_inj"]
+ALL_TOGETHER_METHODS = ["method_3_context", "method_4_full_gen"]
 
 # Annotation guide prompt
 PROMPT_ANNOTATION_GUIDE = "The previous document contains the annotation guidelines for ToxHabits. Please use the annotation guide for the Subshared task 1 to assist in generating augmented text."
