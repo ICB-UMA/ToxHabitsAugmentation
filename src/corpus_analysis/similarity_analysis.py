@@ -9,6 +9,7 @@ the results into a Pandas DataFrame for analysis.
 """
 
 # --- Third-Party Imports ---
+from scipy.stats import entropy
 from rouge_score import rouge_scorer
 from nltk.translate.meteor_score import meteor_score
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
@@ -22,9 +23,11 @@ from ..utils.logging import logger
 from ..utils.text_utils import load_complete_corpus
 from ..imports import (
     os,
+    np,
     pd,
     nltk,
     torch,
+    Counter,
     Dict,
     Optional,
     DEVICE
@@ -178,6 +181,97 @@ def calculate_tfidf_cosine(
     return cosine_similarity_value
 
 
+def get_ngram_profile(
+    texts: list[str],
+    n: int = 4,
+    top_k: int = 5000
+) -> tuple[np.ndarray, list[str]]:
+    """
+    Build frequency vector for an entire corpus using top-k most frequent n-grams.
+    
+    Args:
+        texts: List of all documents in the corpus.
+        n: The length of n-grams to use for the analysis (default is 4).
+        top_k: The number of top n-grams to consider for the frequency vector (default is 5000).
+
+    Returns:
+        A tuple containing:
+        - freq_vector: A numpy array representing the frequency of the top-k n-grams.
+        - vocab: A list of the top-k n-grams corresponding to the frequency vector.
+    """
+    # Count n-grams across the entire corpus
+    total_counter = Counter()
+    
+    for text in texts:
+        # Generate n-grams for the current text
+        ngrams = [text[i:i+n] for i in range(len(text) - n + 1)]
+
+        # Update the total counter with the n-grams from this text
+        current_counter = Counter(ngrams)
+        total_counter.update(current_counter)
+    
+    # Take the top_k most common n-grams as our vocabulary
+    vocab = [ngram for ngram, _ in total_counter.most_common(top_k)]
+    freq_vector = np.zeros(len(vocab))
+    
+    # Fill the frequency vector based on the total counts of the top-k n-grams
+    for i, ngram in enumerate(vocab):
+        freq_vector[i] = total_counter[ngram]
+    
+    # Normalize to probability distribution (important!)
+    freq_vector = freq_vector / freq_vector.sum() if freq_vector.sum() > 0 else freq_vector
+    
+    return freq_vector, vocab
+
+
+def calculate_ngams_cosine(
+    reference_texts: list[str],
+    generated_texts: list[str],
+    n: int = 4,
+    top_k: int = 5000
+) -> float:
+    """
+    Calculates Cosine Similarity based on character n-gram frequency vectors.
+
+    Args:
+        reference_texts: The list of reference texts to compare against.
+        generated_texts: The list of generated texts to evaluate.
+        n: The length of n-grams to use for the analysis (default is 4).
+        top_k: The number of top n-grams to consider for the frequency vector (default is 5000).
+    
+    Returns:
+        Cosine similarity score as a float between 0 and 1.
+    """
+    vec1, vocab1 = get_ngram_profile(reference_texts, n=n, top_k=top_k)
+    vec2, vocab2 = get_ngram_profile(generated_texts, n=n, top_k=top_k)
+    
+    # Use the union of both vocabularies to align vectors
+    all_ngrams = sorted(set(vocab1) | set(vocab2))
+    v1 = np.zeros(len(all_ngrams))
+    v2 = np.zeros(len(all_ngrams))
+    
+    for i, ng in enumerate(all_ngrams):
+        if ng in vocab1:
+            v1[i] = vec1[vocab1.index(ng)]
+        if ng in vocab2:
+            v2[i] = vec2[vocab2.index(ng)]
+    
+    # Normalize again
+    v1 = v1 / v1.sum() if v1.sum() > 0 else v1
+    v2 = v2 / v2.sum() if v2.sum() > 0 else v2
+    
+    # Similarity metrics
+    cosine_sim = cosine_similarity(v1.reshape(1, -1), v2.reshape(1, -1))[0][0]
+    js_divergence = entropy(v1 + 1e-12, v2 + 1e-12) / 2 + entropy(v2 + 1e-12, v1 + 1e-12) / 2
+    hellinger = np.sqrt(np.sum((np.sqrt(v1) - np.sqrt(v2)) ** 2)) / np.sqrt(2)
+
+    return {
+        "cosine": cosine_sim,
+        "js_divergence": js_divergence,
+        "hellinger": hellinger
+    }
+
+
 def get_embeddings(
     text: str,
     tokenizer: AutoTokenizer,
@@ -310,6 +404,10 @@ def print_similarity_report(
     sbert_model, bert_model, bert_tokenizer, rouge_scorer_instance = initialize_similarity_models()
     general_results = pd.DataFrame([])
 
+    # Initialize lists to store reference and generated texts
+    reference_texts = []
+    generated_texts = []
+
     for model in models:
         for prompt in prompts:
             # Load the augmented corpus for this model and prompt
@@ -326,6 +424,10 @@ def print_similarity_report(
                 # Get the clean text for both reference and generated documents
                 reference_text = base_corpus[filename]["clean_text"]
                 generated_text = augmented_corpus.get(filename, {}).get("clean_text", "")
+
+                # Append texts to the lists for n-gram cosine similarity calculation later
+                reference_texts.append(reference_text)
+                generated_texts.append(generated_text)
 
                 if not generated_text:
                     logger.warning(f"No generated text found for {filename}. Skipping metrics calculation.")
@@ -353,9 +455,9 @@ def print_similarity_report(
                     "Filename": filename,
                     "Model": model,
                     "Method": prompt,
-                    "BLEU": bleu,
-                    "METEOR": meteor,
                     "Cosine_Sim_TFIDF": tfidf_cos,
+                    "METEOR": meteor,
+                    "BLEU": bleu,
                     "ROUGE-1": rouge_scores["ROUGE-1"],
                     "ROUGE-2": rouge_scores["ROUGE-2"],
                     "ROUGE-L": rouge_scores["ROUGE-L"],
@@ -368,12 +470,30 @@ def print_similarity_report(
             # Create DataFrame
             augmented_results = pd.DataFrame(augmented_results)
             
+            # Calculate n-gram cosine similarity for the entire corpus
+            ngram_cosine_results = calculate_ngams_cosine(reference_texts, generated_texts, n=4, top_k=5000)
+            logger.info(f"Calculated n-gram cosine similarity for model '{model}' and prompt '{prompt}': {ngram_cosine_results}")
+
+            # Add n-gram cosine similarity results to the DataFrame (same value for all rows since it's corpus-level)
+            augmented_results["Cosine_Sim_NGram"] = ngram_cosine_results["cosine"]
+            augmented_results["JS_Divergence"] = ngram_cosine_results["js_divergence"]
+            augmented_results["Hellinger_Distance"] = ngram_cosine_results["hellinger"]
+            
             # Calculate Averages
             means = augmented_results.mean(numeric_only=True)
             means["Filename"] = "AVERAGE"
             means["Model"] = model
             means["Method"] = prompt
+
+            # Calculate standard deviations for referencee
+            stds = augmented_results.std(numeric_only=True)
+            stds["Filename"] = "STD_DEV"
+            stds["Model"] = model
+            stds["Method"] = prompt
+            
+            # Concatenate the average and standard deviation rows to the results DataFrame
             augmented_results = pd.concat([augmented_results, pd.DataFrame([means])], ignore_index=True)
+            augmented_results = pd.concat([augmented_results, pd.DataFrame([stds])], ignore_index=True)
 
             # Print the results for this model and prompt
             logger.info(f"Similarity Report for model '{model}' and prompt '{prompt}':")
@@ -388,7 +508,7 @@ def print_similarity_report(
                 logger.info(f"Saved similarity report for model '{model}' and prompt '{prompt}' to {output_path}")
 
             # Append average results to general results for overall comparison
-            general_results = pd.concat([general_results, pd.DataFrame([means])], ignore_index=True)
+            general_results = pd.concat([general_results, pd.DataFrame([means]), pd.DataFrame([stds])], ignore_index=True)
         
     # Remove the "Filename" column from the general results as it only contains "AVERAGE"
     general_results = general_results.drop(columns=["Filename"])
