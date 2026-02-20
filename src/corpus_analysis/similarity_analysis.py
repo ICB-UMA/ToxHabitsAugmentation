@@ -75,8 +75,8 @@ def calculate_bleu(
         BLEU score as a float between 0 and 1.
     """
     # Tokenize the texts
-    reference_tokens = nltk.word_tokenize(reference_text.lower())
-    generated_tokens = nltk.word_tokenize(generated_text.lower())
+    reference_tokens = nltk.word_tokenize(reference_text.lower(), language="spanish")
+    generated_tokens = nltk.word_tokenize(generated_text.lower(), language="spanish")
 
     # Using smoothing function to handle short texts better
     chencherry = SmoothingFunction()
@@ -101,8 +101,8 @@ def calculate_meteor(
         METEOR score as a float between 0 and 1.
     """
     # Tokenize the texts
-    reference_tokens = nltk.word_tokenize(reference_text.lower())
-    generated_tokens = nltk.word_tokenize(generated_text.lower())
+    reference_tokens = nltk.word_tokenize(reference_text.lower(), language="spanish")
+    generated_tokens = nltk.word_tokenize(generated_text.lower(), language="spanish")
 
     # Calculate METEOR score
     meteor_score_value = meteor_score([reference_tokens], generated_tokens)

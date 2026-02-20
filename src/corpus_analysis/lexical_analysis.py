@@ -20,7 +20,6 @@ from ..imports import (
     pd,
     re,
     plt,
-    json,
     nltk,
     Any,
     Dict,
@@ -247,10 +246,10 @@ def plot_corpus_word_comparison(
         "gpt-4.1-nano": "GPT-4.1",
         "biomistral-7b": "BioMistral",
         "llama3.2-3b": "Llama-3.2",
-        "method_1_var": "STG#1",
-        "method_2_guides_inj": "STG#2",
-        "method_3_context": "STG#3",
-        "method_4_full_gen": "STG#4",
+        "method_1_var": "GSA#1",
+        "method_2_guides_inj": "GSA#2",
+        "method_3_context": "GSA#3",
+        "method_4_full_gen": "GSA#4",
     }
 
     # Set default names if not provided
