@@ -169,4 +169,12 @@ ToxHabits_Augmentation/
 ├── README.md
 └── LICENSE
 
+---
+
+## 3. Generated Data
+
+The generated data will be stored in the `data/augmented/` directory, organised by method and model. Each generated document will have a corresponding `.txt` file for the text and a `.ann` file for the annotations, following the Brat format.
+
+You can find the generated data for this project in the SyntheticDataGenerated.zip file in the repository.
+
 ```
