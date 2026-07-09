@@ -80,6 +80,7 @@ HUGGINGFACE_MODELS = ["biomistral-7b", "medical-mt5-large"]
 SENTENCE_BY_SENTENCE_METHODS = ["method_1_var", "method_2_guides_inj"]
 ALL_TOGETHER_METHODS = ["method_3_context", "method_4_full_gen"]
 OVERSAMPLING_METHODS = ["oversampling"]
+SYNONYM_REPLACEMENT_METHODS = ["synonym_replacement", "synonym_replacement_dictionary"]
 
 # Annotation guide prompt
 PROMPT_ANNOTATION_GUIDE = "The previous document contains the annotation guidelines for ToxHabits. Please use the annotation guide for the Subshared task 1 to assist in generating augmented text."

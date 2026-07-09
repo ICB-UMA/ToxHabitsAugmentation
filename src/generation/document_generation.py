@@ -29,6 +29,11 @@ from .ollama import (
 from .oversampling import (
     run_entity_aware_oversampling
 )
+from .synonym_replacement import (
+    run_mlm_synonym_replacement,
+    STANDARD_MODE,
+    DICTIONARY_RELABEL_MODE,
+)
 from ..utils.logging import logger
 from ..utils.file_utils import (
     extract_filename_without_extension,
@@ -58,7 +63,8 @@ from ..imports import (
     MAXIMUM_NUMBER_OF_RETRIES,
     SENTENCE_BY_SENTENCE_METHODS,
     ALL_TOGETHER_METHODS,
-    OVERSAMPLING_METHODS
+    OVERSAMPLING_METHODS,
+    SYNONYM_REPLACEMENT_METHODS
 )
 
 def build_sentence_prompt(
@@ -311,6 +317,22 @@ def run_generation_workflow(
             original_path=str(original_path),
             output_path=oversampling_output_path,
             logger_file=oversampling_logger_file,
+        )
+        return
+
+    # Non-LLM methods can run directly without prompt/model session setup.
+    if model in SYNONYM_REPLACEMENT_METHODS:
+        synonym_output_path = os.path.join(output_path, model, model_name)
+        synonym_logger_file = os.path.join(
+            synonym_output_path,
+            f"generation_{model}_{model_name}.json"
+        )
+        replacement_mode = DICTIONARY_RELABEL_MODE if model == "synonym_replacement_dictionary" else STANDARD_MODE
+        run_mlm_synonym_replacement(
+            original_path=str(original_path),
+            output_path=synonym_output_path,
+            logger_file=synonym_logger_file,
+            replacement_mode=replacement_mode,
         )
         return
 

@@ -251,6 +251,7 @@ def plot_corpus_word_comparison(
         "method_3_context": "GSA#3",
         "method_4_full_gen": "GSA#4",
         "oversampling": "Oversampling",
+        "synonym_replacement": "Synonym-MLM",
     }
 
     # Set default names if not provided
@@ -272,11 +273,11 @@ def plot_corpus_word_comparison(
         # Normalize counts by total number of words in each corpus
         count_data = [[(corpus.get(word, 0) / sum(corpus.values())) * 1000 for word in words] for corpus in corpus_dicts]
         plot_title = f"Comparison of top {top_n} words per 1,000 words ({abbreviations_mapping.get(prompt_type, prompt_type)})"
-        filename = f"FIG2_per_1000_words.jpg"
+        filename = "FIG2_per_1000_words.jpg"
     else:
         count_data = [[corpus.get(word, 0) for word in words] for corpus in corpus_dicts]
         plot_title = f"Comparison of top {top_n} words ({abbreviations_mapping.get(prompt_type, prompt_type)})"
-        filename = f"FIG2_absolute_counts.jpg"
+        filename = "FIG2_absolute_counts.jpg"
     
     # Create grouped bar chart
     plt.figure(figsize=(16, 7), dpi=100)

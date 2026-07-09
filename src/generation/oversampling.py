@@ -12,11 +12,13 @@ from ..utils.text_utils import parse_ann_file
 from ..imports import (
     json,
     shutil,
+    random,
     Counter,
     Dict,
     List,
     Path,
     Optional,
+    RANDOM_SEED,
 )
 
 
@@ -112,6 +114,8 @@ def run_entity_aware_oversampling(
         Dictionary with oversampling statistics.
     """
     # Validate input paths and prepare output directory.
+    rng = random.Random(RANDOM_SEED)
+
     source_dir = Path(original_path)
     target_dir = Path(output_path)
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -191,7 +195,7 @@ def run_entity_aware_oversampling(
 
     # Loop until we reach the maximum number of added documents or there are no more deficits.
     while additions < max_added_documents and any(v > 0 for v in deficits.values()):
-        best_doc = None
+        best_docs = []
         best_score = 0
 
         for doc in documents:
@@ -199,11 +203,16 @@ def run_entity_aware_oversampling(
             score = compute_selection_score(deficits, doc["entity_counter"])
             if score > best_score:
                 best_score = score
-                best_doc = doc
+                best_docs = [doc]
+            elif score == best_score and score > 0:
+                best_docs.append(doc)
 
         # If no document contributes to reducing deficits, we break the loop.
-        if best_doc is None or best_score <= 0:
+        if not best_docs or best_score <= 0:
             break
+
+        # Resolve ties with a deterministic RNG controlled by RANDOM_SEED.
+        best_doc = rng.choice(best_docs)
 
         # Update counts and deficits based on the selected document.
         selected_counts[best_doc["stem"]] += 1
