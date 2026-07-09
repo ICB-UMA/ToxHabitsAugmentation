@@ -242,7 +242,7 @@ def plot_corpus_word_comparison(
         corpus_names: Optional list of names for the corpora, used for the legend.
         output_path: Optional path to save the plot; if None, the plot is shown instead.
     """
-    abreviations_mapping = {
+    abbreviations_mapping = {
         "gpt-4.1-nano": "GPT-4.1",
         "biomistral-7b": "BioMistral",
         "llama3.2-3b": "Llama-3.2",
@@ -250,12 +250,13 @@ def plot_corpus_word_comparison(
         "method_2_guides_inj": "GSA#2",
         "method_3_context": "GSA#3",
         "method_4_full_gen": "GSA#4",
+        "oversampling": "Oversampling",
     }
 
     # Set default names if not provided
     if corpus_names is None:
         corpus_names = ["Base Corpus"]
-        for i in range(len(augmented_corpus)):
+        for i in range(len(prompt_type)):
             corpus_names.append(f"Augmented Corpus {i+1}")
     
     # Convert list of word lists into list of frequency dictionaries
@@ -270,11 +271,11 @@ def plot_corpus_word_comparison(
     if per_number_words:
         # Normalize counts by total number of words in each corpus
         count_data = [[(corpus.get(word, 0) / sum(corpus.values())) * 1000 for word in words] for corpus in corpus_dicts]
-        plot_title = f"Comparison of top {top_n} words per 1,000 words ({abreviations_mapping.get(prompt_type, prompt_type)})"
+        plot_title = f"Comparison of top {top_n} words per 1,000 words ({abbreviations_mapping.get(prompt_type, prompt_type)})"
         filename = f"FIG2_per_1000_words.jpg"
     else:
         count_data = [[corpus.get(word, 0) for word in words] for corpus in corpus_dicts]
-        plot_title = f"Comparison of top {top_n} words ({abreviations_mapping.get(prompt_type, prompt_type)})"
+        plot_title = f"Comparison of top {top_n} words ({abbreviations_mapping.get(prompt_type, prompt_type)})"
         filename = f"FIG2_absolute_counts.jpg"
     
     # Create grouped bar chart
@@ -287,7 +288,7 @@ def plot_corpus_word_comparison(
         plt.bar(x_positions + i * bar_width,
                 count_data[i],
                 width=bar_width,
-                label=abreviations_mapping.get(corpus_names[i], corpus_names[i]),
+                label=abbreviations_mapping.get(corpus_names[i], corpus_names[i]),
                 alpha=0.85)
     
     # Format chart

@@ -26,6 +26,9 @@ from .ollama import (
     create_ollama_chat_session,
     send_ollama_message
 )
+from .oversampling import (
+    run_entity_aware_oversampling
+)
 from ..utils.logging import logger
 from ..utils.file_utils import (
     extract_filename_without_extension,
@@ -53,9 +56,9 @@ from ..imports import (
     OPENAI_MODELS,
     HUGGINGFACE_MODELS,
     MAXIMUM_NUMBER_OF_RETRIES,
-    PROMPT_ANNOTATION_GUIDE,
     SENTENCE_BY_SENTENCE_METHODS,
-    ALL_TOGETHER_METHODS
+    ALL_TOGETHER_METHODS,
+    OVERSAMPLING_METHODS
 )
 
 def build_sentence_prompt(
@@ -294,6 +297,23 @@ def run_generation_workflow(
     if model in HUGGINGFACE_MODELS:
         prompt_suffix = "_spanish"
 
+    # Sanitize model name for output path
+    model_name = "".join(x for x in model if str(x).isalnum() or str(x) in ['-', '_'])
+
+    # Non-LLM methods can run directly without prompt/model session setup.
+    if model in OVERSAMPLING_METHODS:
+        oversampling_output_path = os.path.join(output_path, model, model_name)
+        oversampling_logger_file = os.path.join(
+            oversampling_output_path,
+            f"generation_{model}_{model_name}.json"
+        )
+        run_entity_aware_oversampling(
+            original_path=str(original_path),
+            output_path=oversampling_output_path,
+            logger_file=oversampling_logger_file,
+        )
+        return
+
     # Load prompt
     prompt_file = os.path.join(prompts_path, f"{prompt_type}{prompt_suffix}.txt")
     if not os.path.exists(prompt_file):
@@ -307,9 +327,6 @@ def run_generation_workflow(
         # Load PDF text for these methods and models
         with open(pdf_path, 'r', encoding='utf-8') as f:
             pdf_text = f.read()
-
-    # Sanitize model name for output path
-    model_name = "".join(x for x in model if str(x).isalnum() or str(x) in ['-', '_'])
 
     # Create output path
     output_path = os.path.join(output_path, prompt_type, model_name)
