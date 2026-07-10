@@ -15,6 +15,7 @@ import sys
 # --- Local Imports ---
 from .utils.logging import logger
 from .utils.text_utils import load_complete_corpus
+from .utils.transform_labels import transform_labels_function
 from .corpus_analysis.lexical_analysis import print_corpus_analysis_report, print_corpus_word_comparison
 from .corpus_analysis.clinical_term_analysis import print_clinical_term_report
 from .corpus_analysis.similarity_analysis import print_similarity_report
@@ -29,6 +30,7 @@ def main(
     download_datasets: bool = False,
     segmentate_documents: bool = False,
     generate_documents: bool = False,
+    transform_labels: bool = False,
     train_models: bool = False,
     analyze_corpus: bool = False,
     comparise_word_frequencies: bool = False,
@@ -44,6 +46,7 @@ def main(
         download_datasets: Flag to trigger dataset downloading
         segmentate_documents: Flag to trigger document segmentation
         generate_documents: Flag to trigger document generation
+        transform_labels: Flag to trigger label transformation
         train_models: Flag to trigger model training
         analyze_corpus: Flag to trigger corpus analysis
         comparise_word_frequencies: Flag to trigger word frequency comparison across corpora
@@ -80,6 +83,13 @@ def main(
                 for model in models:
                     # Start document generation
                     run_generation_workflow(prompt_type, model, global_root)
+
+        if transform_labels:
+            # Start label transformation
+            transform_labels_function(
+                methods=prompts,
+                models=models
+            )
 
         if analyze_corpus:
             # Define paths for original and augmented corpora
@@ -122,7 +132,7 @@ def main(
                 )
 
         if similarity_analysis:
-            logger.info(f"\n\nStarting similarity analysis...\n")
+            logger.info("\n\nStarting similarity analysis...\n")
 
             # Start similarity analysis
             print_similarity_report(
@@ -143,7 +153,7 @@ def main(
             logger.info("NER training pipeline completed successfully.")
 
         if similarity_analysis:
-            logger.info(f"\n\nStarting similarity analysis...\n")
+            logger.info("\n\nStarting similarity analysis...\n")
 
             # Start similarity analysis
             print_similarity_report(

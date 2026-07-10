@@ -48,6 +48,7 @@ if __name__ == '__main__':
         download_datasets=False,
         segmentate_documents=False,
         generate_documents=False,
+        transform_labels=False,
         train_models=False,
         analyze_corpus=False,
         comparise_word_frequencies=False,
