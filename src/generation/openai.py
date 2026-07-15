@@ -8,6 +8,7 @@ PDF/document attachments.
 """
 
 # --- Third-Party Imports ---
+import csv
 import openai
 
 # --- Local Imports ---
@@ -18,7 +19,10 @@ from ..imports import (
     Optional,
     Any,
     Path,
-    OPENAI_API_KEY
+    CSV_FILE,
+    OPENAI_API_KEY,
+    PRICE_PER_M_INPUT,
+    PRICE_PER_M_OUTPUT
 )
 
 
@@ -66,7 +70,7 @@ def create_openai_chat_session(
         chat_history=[],
         openai_first_response=None,
         openai_client = client,
-        api_key=api_key,
+        api_key=api_key
     )
 
     # Prepare OpenAI client if developer prompt provided
@@ -194,6 +198,7 @@ def send_openai_message(
                 if text:
                     full_response += text
                     logger.debug(chunk.text, end="", flush=True)
+            usage = response_stream.usage
         else:
             # Non-streaming response
             response = session.openai_client.responses.create(
@@ -203,7 +208,23 @@ def send_openai_message(
                 **session.generation_options
             )
             full_response = response.output_text if response.output_text else ""
+            usage = response.usage
+
+        # Grab the token counts from the usage parameter
+        input_tokens = usage.input_tokens
+        output_tokens = usage.output_tokens
+        total_tokens = usage.total_tokens
+
+        # Calculate the cost of this specific call
+        input_cost = (input_tokens / 1_000_000) * PRICE_PER_M_INPUT
+        output_cost = (output_tokens / 1_000_000) * PRICE_PER_M_OUTPUT
+        total_cost = input_cost + output_cost
         
+        with open(CSV_FILE, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            # Write headers if it's a new file: Run_ID, Input_Tokens, Output_Tokens, Cost
+            writer.writerow(["openai", input_tokens, output_tokens, total_tokens, total_cost])
+
         # Add assistant response to history
         session.chat_history.append({"role": "assistant", "content": full_response})
         

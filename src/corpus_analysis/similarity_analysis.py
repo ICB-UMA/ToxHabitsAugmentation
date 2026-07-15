@@ -30,6 +30,7 @@ from ..imports import (
     Counter,
     Dict,
     Optional,
+    ABBREVIATIONS_MAPPING,
     DEVICE
 )
 
@@ -410,8 +411,12 @@ def print_similarity_report(
 
     for model in models:
         for prompt in prompts:
+            # Get abbreviations for prompt and model
+            prompt_abbr = ABBREVIATIONS_MAPPING.get(prompt, prompt)
+            model_abbr = model.replace(".", "")
+
             # Load the augmented corpus for this model and prompt
-            augmented_corpus_path = f"augmented/{prompt}/{model}"
+            augmented_corpus_path = f"corrected/{prompt_abbr}/{model_abbr}"
             augmented_corpus = load_complete_corpus(data_path=os.path.join(data_path, augmented_corpus_path))
 
             logger.info(f"Found {len(base_corpus)} documents. Starting evaluation for model '{model}' and prompt '{prompt}'...")
@@ -500,7 +505,7 @@ def print_similarity_report(
             logger.info(augmented_results.round(4))
 
             if output_path:
-                file_path = os.path.join(output_path, f"{prompt}/similarity_report_{model}_{prompt}.csv")
+                file_path = os.path.join(output_path, f"{prompt_abbr}/similarity_report_{model_abbr}_{prompt_abbr}.csv")
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
                 # Save the results to a CSV file for this model and prompt

@@ -56,6 +56,7 @@ from ..imports import (
     Path,
     Any,
     Optional,
+    ABBREVIATIONS_MAPPING,
     GEMINI_MODELS,
     OLLAMA_MODELS,
     OPENAI_MODELS,
@@ -351,10 +352,11 @@ def run_generation_workflow(
             pdf_text = f.read()
 
     # Create output path
-    output_path = os.path.join(output_path, prompt_type, model_name)
+    abbreviated_prompt = ABBREVIATIONS_MAPPING.get(prompt_type, prompt_type)
+    output_path = os.path.join(output_path, abbreviated_prompt, model_name)
 
     # Setup logging for this generation run
-    logger_file = os.path.join(output_path, f"generation_{prompt_type}_{model_name}.json")
+    logger_file = os.path.join(output_path, f"generation_{abbreviated_prompt}_{model_name}.json")
     logger_json = {
         'generated_documents': [],
         'failed_documents': []

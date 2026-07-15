@@ -3,6 +3,8 @@
 Import usually packages and define constants for the project.
 """
 
+# ruff: noqa: F401
+
 # --- Standard Library Imports ---
 import os
 import re
@@ -36,7 +38,8 @@ try:
     nltk.data.find("tokenizers/punkt")
     nltk.data.find("corpora/stopwords")
     nltk.data.find("wordnet")
-except:
+except Exception:
+
     # If not found, download the necessary NLTK data packages
     print("NLTK data not found. Downloading required packages...")
     nltk.download("punkt", quiet=True)
@@ -76,6 +79,10 @@ OLLAMA_MODELS = ["gemma3-4b", "llama3.2-3b", "ministral3-3b", "qwen3-4b"]
 OPENAI_MODELS = ["gpt-4.1-nano", "gpt-5-nano"]
 HUGGINGFACE_MODELS = ["biomistral-7b", "medical-mt5-large"]
 
+# OpenAI API Cost
+PRICE_PER_M_INPUT = 0.10   # $0.10 per million input tokens
+PRICE_PER_M_OUTPUT = 0.40  # $0.40 per million output tokens
+
 # Define augmentation method categories
 SENTENCE_BY_SENTENCE_METHODS = ["method_1_var", "method_2_guides_inj"]
 ALL_TOGETHER_METHODS = ["method_3_context", "method_4_full_gen"]
@@ -84,3 +91,26 @@ SYNONYM_REPLACEMENT_METHODS = ["synonym_replacement", "synonym_replacement_dicti
 
 # Annotation guide prompt
 PROMPT_ANNOTATION_GUIDE = "The previous document contains the annotation guidelines for ToxHabits. Please use the annotation guide for the Subshared task 1 to assist in generating augmented text."
+
+# Define paths for data storage
+AUGMENTATION_PATH = "data/augmented"
+CORRECTED_PATH = "data/corrected"
+
+# Define path for experiment cost log CSV
+CSV_FILE = "data/experiment_cost_log.csv"
+
+# Define abbreviations mapping for models and methodss
+ABBREVIATIONS_MAPPING = {
+    "gpt-4.1-nano": "GPT-4.1",
+    "gpt-4.1-nano-temp-0": "GPT-4.1-temp-0.0",
+    "gpt-4.1-nano-temp-0.6": "GPT-4.1-temp-0.6",
+    "gpt-4.1-nano-temp-1": "GPT-4.1-temp-1.0",
+    "biomistral-7b": "BioMistral",
+    "llama3.2-3b": "Llama-3.2",
+    "method_1_var": "GSA#1",
+    "method_2_guides_inj": "GSA#2",
+    "method_3_context": "GSA#3",
+    "method_4_full_gen": "GSA#4",
+    "oversampling": "Oversampling",
+    "synonym_replacement": "Synonym-MLM",
+}

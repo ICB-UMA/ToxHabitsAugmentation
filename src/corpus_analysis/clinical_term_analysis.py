@@ -524,7 +524,7 @@ def print_simple_frequency_entities_report(
     # Generate report
     if lines:
         lines.append("\n")
-    lines.append(f"FREQUENCY BY ENTITY TYPE")
+    lines.append("FREQUENCY BY ENTITY TYPE")
     lines.append("-" * 62)
     lines.append(types_df.to_markdown(index=False, tablefmt="pipe", colalign=align_columns))
     lines.append("-" * 62)

@@ -25,7 +25,8 @@ from ..imports import (
     Dict,
     Path,
     Counter,
-    Optional
+    Optional,
+    ABBREVIATIONS_MAPPING
 )
 
 
@@ -92,8 +93,8 @@ def perform_linguistic_analysis(
             "Total Word Count": 0,
             "Total Unique Words": 0,
             "Total Sentences": 0,
-            "Avg. Sentence Length": 0.0,
-            "Avg. Word Length": 0.0,
+            "Average Sentence Length": 0.0,
+            "Average Word Length": 0.0,
             f"Top {top_n} Words": [],
             f"Top {top_n} Abbreviations": [],
             "Negation Cue Frequency": 0.0,
@@ -168,11 +169,11 @@ def perform_linguistic_analysis(
     unique_words_nonstop_nonnum = set(filtered_words_nonstop_nonnum)
     total_unique_words_nonstop_nonnum = len(unique_words_nonstop_nonnum)
 
-    # Avg. Sentence Length
+    # Average Sentence Length
     sentence_lengths = [len(nltk.tokenize.word_tokenize(s)) for s in all_sentences]
     avg_sentence_length = sum(sentence_lengths) / total_sentences if total_sentences > 0 else 0.0
     
-    # Avg. Word Length
+    # Average Word Length
     avg_word_length = sum(len(word) for word in all_words) / total_words if total_words > 0 else 0.0
 
     # Top n Words
@@ -200,8 +201,8 @@ def perform_linguistic_analysis(
         "Total Word Count": total_words,
         "Total Unique Words": total_unique_words,
         "Total Sentences": total_sentences,
-        "Avg. Sentence Length (words)": avg_sentence_length,
-        "Avg. Word Length (characters)": avg_word_length,
+        "Average Sentence Length (words)": avg_sentence_length,
+        "Average Word Length (characters)": avg_word_length,
         "Total Non-stop Words Count": total_words_nonstop,
         "Total Unique Non-stop Words": total_unique_words_nonstop,
         "Total Non-stop/Non-num Words Count": total_words_nonstop_nonnum,
@@ -242,18 +243,6 @@ def plot_corpus_word_comparison(
         corpus_names: Optional list of names for the corpora, used for the legend.
         output_path: Optional path to save the plot; if None, the plot is shown instead.
     """
-    abbreviations_mapping = {
-        "gpt-4.1-nano": "GPT-4.1",
-        "biomistral-7b": "BioMistral",
-        "llama3.2-3b": "Llama-3.2",
-        "method_1_var": "GSA#1",
-        "method_2_guides_inj": "GSA#2",
-        "method_3_context": "GSA#3",
-        "method_4_full_gen": "GSA#4",
-        "oversampling": "Oversampling",
-        "synonym_replacement": "Synonym-MLM",
-    }
-
     # Set default names if not provided
     if corpus_names is None:
         corpus_names = ["Base Corpus"]
@@ -272,16 +261,16 @@ def plot_corpus_word_comparison(
     if per_number_words:
         # Normalize counts by total number of words in each corpus
         count_data = [[(corpus.get(word, 0) / sum(corpus.values())) * 1000 for word in words] for corpus in corpus_dicts]
-        plot_title = f"Comparison of top {top_n} words per 1,000 words ({abbreviations_mapping.get(prompt_type, prompt_type)})"
+        plot_title = f"Comparison of top {top_n} words per 1,000 words ({ABBREVIATIONS_MAPPING.get(prompt_type, prompt_type)})"
         filename = "FIG2_per_1000_words.jpg"
     else:
         count_data = [[corpus.get(word, 0) for word in words] for corpus in corpus_dicts]
-        plot_title = f"Comparison of top {top_n} words ({abbreviations_mapping.get(prompt_type, prompt_type)})"
+        plot_title = f"Comparison of top {top_n} words ({ABBREVIATIONS_MAPPING.get(prompt_type, prompt_type)})"
         filename = "FIG2_absolute_counts.jpg"
     
     # Create grouped bar chart
     plt.figure(figsize=(16, 7), dpi=100)
-    bar_width = 0.22
+    bar_width = 0.15
     x_positions = np.arange(len(words))
     
     # Plot bars for each corpus
@@ -289,7 +278,7 @@ def plot_corpus_word_comparison(
         plt.bar(x_positions + i * bar_width,
                 count_data[i],
                 width=bar_width,
-                label=abbreviations_mapping.get(corpus_names[i], corpus_names[i]),
+                label=ABBREVIATIONS_MAPPING.get(corpus_names[i], corpus_names[i]),
                 alpha=0.85)
     
     # Format chart
@@ -414,8 +403,8 @@ def print_corpus_analysis_report(
         "Absolute": [
             linguistic["Total Documents"],
             f"{linguistic['Total Sentences']:,}",
-            f"{linguistic['Avg. Sentence Length (words)']:.2f}",
-            f"{linguistic['Avg. Word Length (characters)']:.2f}",
+            f"{linguistic['Average Sentence Length (words)']:.2f}",
+            f"{linguistic['Average Word Length (characters)']:.2f}",
             f"{linguistic['Total Word Count']:,}",
             f"{linguistic['Total Unique Words']:,}",
             f"{linguistic['Total Non-stop Words Count']:,}",
@@ -502,8 +491,11 @@ def print_corpus_word_comparison(
     corpus_names = ["Original"]
 
     for model in models:
+        # Sanitize model name for output path
+        model_abbr = model.replace(".", "")
+
         # Add the augmented corpus path for this model and prompt to the list of corpora paths to compare
-        augmented_corpus_path = f"augmented/{prompt_type}/{model}"
+        augmented_corpus_path = f"corrected/{prompt_type}/{model_abbr}"
         corpora_paths.append(augmented_corpus_path)
         corpus_names.append(f"{model}")
     

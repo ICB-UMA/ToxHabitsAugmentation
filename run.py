@@ -51,7 +51,7 @@ if __name__ == '__main__':
         transform_labels=False,
         train_models=False,
         analyze_corpus=False,
-        comparise_word_frequencies=False,
+        compare_word_frequencies=False,
         similarity_analysis=False,
         prompts=prompts,
         models=models

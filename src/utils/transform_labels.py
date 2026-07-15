@@ -11,7 +11,10 @@ entity labels based on a predefined mapping.
 from .logging import logger
 from ..imports import (
     shutil,
-    Path
+    Path,
+    ABBREVIATIONS_MAPPING,
+    AUGMENTATION_PATH,
+    CORRECTED_PATH
 )
 
 # --- Constants ---
@@ -24,13 +27,14 @@ ENTITIES_MAPPING = {
         "vapor", "v[Tobacco", "pipa:Tobacco", "pipa", "Pipe", "Pipes", "Pipe/Tobacco", 
         "Fumar", "Fumo", "Cigarette", "Cigarettes/year", "Cigarrillos", "Nicotina", 
         "Nicotine", "Paquete", "Puros", "Tabaquismo", "VAPING",
+        "Fumador", "Fumadora", "Fumadores", "Fumadoras", "Fumadores/as",
         "E-cigarette", "E-cigarettes", "E-cigarrillos:vaping", "\"vaping\"", "Vaporización",
         "Vaporizador", "Vaporizadores", "Vaporizer", "Shisha",
         "Cigaretos", "Cigarettes", "Cigarrillo", "Cigarilla", "Cigarillo", "Cigarrete", 
         "Cigarretes", "Cigarrets", "Cigarro", "Cigarros:forma", "Cigarrotype",
         "Fuma", "Smokes", "Smoker", "Smoking", "Smoking-amount", "Smoking-duration", 
         "Smoking-method", "Smoking-onset", "Smoking_status", "Tabaco,fumador", "Tobacco,",
-        "Ex-fumadora", "Ex-fumer", "Fumer", "Fumadora", "Tabáquico", "Tobaco", "Exfumador", "Non-smoker",
+        "Ex-fumadora", "Ex-fumer", "Fumer", "Tabáquico", "Tobaco", "Exfumador", "Non-smoker",
         "@:tobacco", "[fumador:tobacco", "[tabaco", "[tabaco:drug", "[tabaquismo:tobacco", 
         "[exfumador:tobacco", "[exfumadora:tobacco", "[fumador:", "[fumadora:tobacco", "Ex-[fumador:tobacco"
     ],
@@ -150,7 +154,7 @@ def entity_normalization(
 def transform_labels_function(
     methods: list[str],
     models: list[str],
-    input_base_dir: Path = Path("./data/augmented/"),
+    input_base_dir: Path = Path(f"./{AUGMENTATION_PATH}/"),
 ) -> None:
     """
     Transforms the entity labels in .ann files for each method and model combination.
@@ -159,29 +163,16 @@ def transform_labels_function(
         methods (List[str]): List of augmentation methods.
         models (List[str]): List of model names.
     """
-    # Define a mapping for abbreviations to make logs more readable.
-    abbreviations_mapping = {
-        "gpt-4.1-nano": "gpt-41-nano",
-        "biomistral-7b": "biomistral-7b",
-        "llama3.2-3b": "llama32-3b",
-        "method_1_var": "GSA#1",
-        "method_2_guides_inj": "GSA#2",
-        "method_3_context": "GSA#3",
-        "method_4_full_gen": "GSA#4",
-        "oversampling": "Oversampling",
-        "synonym_replacement": "Synonym-MLM",
-    }
-
     # Iterate through each method and model combination to process the corresponding .ann files.
     for method in methods:
-        method_abbr = abbreviations_mapping.get(method, method)
+        method_abbr = ABBREVIATIONS_MAPPING.get(method, method)
         for model in models:
-            model_abbr = abbreviations_mapping.get(model, model)
+            model_abbr = model.lower().replace(".", "")
             logger.info(f"\n\n--- Analyzing entities for method '{method_abbr}' and model '{model_abbr}' ---")
             
             # Define input and output directories based on method and model.
             input_dir = Path(f"{input_base_dir}/{method_abbr}/{model_abbr}/")
-            output_dir = Path(f"{input_base_dir}/{method_abbr}/{model_abbr}_corrected/")
+            output_dir = Path(f"./{CORRECTED_PATH}/{method_abbr}/{model_abbr}/")
             incorrect_entities = set()
 
             # Process each .ann file in the input directory.
@@ -193,8 +184,10 @@ def transform_labels_function(
                             parts = line.strip().split("\t")
                             if len(parts) > 1:
                                 entity_type = parts[1].split()[0]
+                                start_index = parts[1].split()[-2]
+                                end_index = parts[1].split()[-1]
                                 corrected_type = entity_normalization(entity_type)
-                                corrected_entities.append(f"{parts[0]}\t{corrected_type}\t{'\t'.join(parts[2:])}")
+                                corrected_entities.append(f"{parts[0]}\t{corrected_type} {start_index} {end_index}\t{'\t'.join(parts[2:])}")
 
                                 # Track any entities that are not one of the four main categories.
                                 if corrected_type not in ["Tobacco", "Cannabis", "Alcohol", "Drugs"]:

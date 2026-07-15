@@ -252,7 +252,7 @@ def load_complete_corpus(
                 - ann_path: path to the .ann file
     """
     # Sanitize model name for output path
-    data_path = "".join(x for x in data_path if str(x).isalnum() or str(x) in ['-', '_', '/', '\\', ':'])
+    data_path = "".join(x for x in data_path if str(x).isalnum() or str(x) in ['-', '_', '/', '\\', ':', '#'])
 
     # Convert to Path object
     logger.info(f"Loading corpus from: {data_path}")

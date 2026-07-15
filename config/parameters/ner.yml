@@ -4,7 +4,7 @@ ner:
   data:
     raw_train: data/raw/train
     raw_test: data/raw/test
-    augmented_root: data/augmented
+    augmented_root: data/corrected
     use_augmented: true
   augmented:
     suffix: _aug
