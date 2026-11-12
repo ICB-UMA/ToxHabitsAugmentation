@@ -387,15 +387,15 @@ def print_corpus_analysis_report(
     stats_df = pd.DataFrame({
         "Metric": [
             "Total Documents",
+            "Total Sentences",
+            "Average Sentence Length (words)",
+            "Average Word Length (characters)",
             "Total Word Count",
             "Total Unique Words",
-            "Total Sentences",
             "Total Non-stop Words Count",
             "Total Unique Non-stop Words",
             "Total Non-stop/Non-num Words Count",
             "Total Unique Non-stop/Non-num Words",
-            "Average Sentence Length (words)",
-            "Average Word Length (characters)",
             "Lexical Diversity (Type-Token Ratio)",
             "Negation Cue Frequency (per 1k words)",
             "Misspelling Rate (%)"

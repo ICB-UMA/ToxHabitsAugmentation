@@ -7,6 +7,9 @@ Tobacco, Cannabis, Alcohol, Drugs. This module provides a function to normalize
 entity labels based on a predefined mapping.
 """
 
+# --- Standard Imports ---
+import csv
+
 # --- Local Imports ---
 from .logging import logger
 from ..imports import (
@@ -59,7 +62,7 @@ ENTITIES_MAPPING = {
         "[oh:alcohol", "A[alcoholemia:alcohol", "[alcohol", "[alcohol:", "[bebedor:alcohol"
     ],
     
-    "Drugs": [
+    "Drug": [
         # Different variations of drug-related terms, including common misspellings and artifacts from model generation.
         "Drug", "Drogas", "drogas", "Drog", "a:Drogas", "Drug}", "leftover:Drug", "Jey:Drug",
         "Caffeine", "caffeine", "Caffeine:Drug", "Psychotropic", "PsychotropicMedication", 
@@ -162,7 +165,12 @@ def transform_labels_function(
     Args:
         methods (List[str]): List of augmentation methods.
         models (List[str]): List of model names.
+
+    Saves `entity_errors_report.csv` in CORRECTED_PATH with, for every method and model,
+    the total number of incorrect entities, the number of documents with at least one
+    incorrect entity and the number of documents left without any correct entity.
     """
+    error_rows = []
     # Iterate through each method and model combination to process the corresponding .ann files.
     for method in methods:
         method_abbr = ABBREVIATIONS_MAPPING.get(method, method)
@@ -174,11 +182,13 @@ def transform_labels_function(
             input_dir = Path(f"{input_base_dir}/{method_abbr}/{model_abbr}/")
             output_dir = Path(f"./{CORRECTED_PATH}/{method_abbr}/{model_abbr}/")
             incorrect_entities = set()
+            n_documents = total_errors = docs_with_errors = docs_without_valid = 0
 
             # Process each .ann file in the input directory.
             for ann_file in input_dir.glob("*.ann"):
                 with open(ann_file, "r", encoding="utf-8") as f:
                     corrected_entities = []
+                    doc_errors = 0
                     for line in f:
                         if line.startswith("T"):
                             parts = line.strip().split("\t")
@@ -186,19 +196,35 @@ def transform_labels_function(
                                 entity_type = parts[1].split()[0]
                                 start_index = parts[1].split()[-2]
                                 end_index = parts[1].split()[-1]
+                                text = '\t'.join(parts[2:]) if len(parts) > 2 else ""
                                 corrected_type = entity_normalization(entity_type)
-                                corrected_entities.append(f"{parts[0]}\t{corrected_type} {start_index} {end_index}\t{'\t'.join(parts[2:])}")
+
+                                if '[' in text:
+                                    # If the text contains a '[', we need to adjust the start index to account for the characters before the bracket.
+                                    bracket_index = text.find('[')
+                                    characters_to_remove = bracket_index + 1
+
+                                    # Adjust the start index and text to remove the characters before the bracket.
+                                    start_index = str(int(start_index) + characters_to_remove)
+                                    text = text[characters_to_remove:]
 
                                 # Track any entities that are not one of the four main categories.
-                                if corrected_type not in ["Tobacco", "Cannabis", "Alcohol", "Drugs"]:
+                                if corrected_type not in ["Tobacco", "Cannabis", "Alcohol", "Drug"]:
                                     incorrect_entities.add(corrected_type)
+                                    doc_errors += 1
+                                else:
+                                    corrected_entities.append(f"{parts[0]}\t{corrected_type} {start_index} {end_index}\t{text}")
+
+                    n_documents += 1
+                    total_errors += doc_errors
+                    docs_with_errors += doc_errors > 0
+                    docs_without_valid += len(corrected_entities) == 0
 
                     # Save the corrected entity types to a new .ann file in the output directory.
                     output_file = output_dir / ann_file.name
                     output_dir.mkdir(parents=True, exist_ok=True)
                     with open(output_file, "a", encoding="utf-8") as out_f:
-                        for entity in corrected_entities:
-                            out_f.write(f"{entity}\n")
+                        out_f.writelines(f"{entity}\n" for entity in corrected_entities)
                     
                     # Copy the corresponding .txt file to the output directory to maintain the document pair.
                     txt_file = ann_file.with_suffix(".txt")
@@ -209,3 +235,26 @@ def transform_labels_function(
             logger.info("\nIncorrect entities found (not mapped to Tobacco, Cannabis, Alcohol, Drugs):")
             for entity in sorted(incorrect_entities):
                 logger.info(entity)
+
+            error_rows.append({
+                "Model": model,
+                "Method": method_abbr,
+                "Documents": n_documents,
+                "Total_errors": total_errors,
+                "Docs_with_errors": docs_with_errors,
+                "Docs_without_correct_entity": docs_without_valid,
+            })
+
+    # Save the error summary for all methods and models.
+    report_path = Path(f"./{CORRECTED_PATH}/entity_errors_report.csv")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(report_path, "w", encoding="utf-8", newline="") as report_file:
+        writer = csv.DictWriter(
+            report_file,
+            fieldnames=["Model", "Method", "Documents", "Total_errors",
+                        "Docs_with_errors", "Docs_without_correct_entity"],
+            delimiter=";",
+        )
+        writer.writeheader()
+        writer.writerows(error_rows)
+    logger.info(f"Saved entity errors report to {report_path}")

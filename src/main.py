@@ -13,17 +13,21 @@ Group: Inteligencia Computacional en Biomedicina (ICB)
 import sys
 
 # --- Local Imports ---
+from .corpus_analysis.clinical_term_analysis import print_clinical_term_report
+from .corpus_analysis.compare_reports import compare_reports
+from .corpus_analysis.lexical_analysis import (
+    print_corpus_analysis_report,
+    print_corpus_word_comparison,
+)
+from .corpus_analysis.similarity_analysis import print_similarity_report
+from .generation.document_generation import run_generation_workflow
+from .imports import ABBREVIATIONS_MAPPING, CORRECTED_PATH
+from .ingestion.document_segmentation import segmentate_toxhabits_documents
+from .ingestion.dowload_zenodo import download_toxhabits_datasets
+from .training.train import train_model
 from .utils.logging import logger
 from .utils.text_utils import load_complete_corpus
 from .utils.transform_labels import transform_labels_function
-from .corpus_analysis.lexical_analysis import print_corpus_analysis_report, print_corpus_word_comparison
-from .corpus_analysis.clinical_term_analysis import print_clinical_term_report
-from .corpus_analysis.similarity_analysis import print_similarity_report
-from .ingestion.dowload_zenodo import download_toxhabits_datasets
-from .ingestion.document_segmentation import segmentate_toxhabits_documents
-from .generation.document_generation import run_generation_workflow
-from .training.train import train_model
-from .imports import ABBREVIATIONS_MAPPING, CORRECTED_PATH
 
 
 def main(
@@ -36,6 +40,7 @@ def main(
     analyze_corpus: bool = False,
     compare_word_frequencies: bool = False,
     similarity_analysis: bool = False,
+    compare_reports_results: bool = False,
     prompts: list[str] = ["method_1_var"],
     models: list[str] = ["llama3.2-3b"],
 ) -> None:
@@ -52,6 +57,7 @@ def main(
         analyze_corpus: Flag to trigger corpus analysis
         compare_word_frequencies: Flag to trigger word frequency comparison across corpora
         similarity_analysis: Flag to trigger similarity analysis
+        compare_reports_results: Flag to trigger report comparison
         prompts: List of prompt types to use for generation
         models: List of models to use for generation
     """
@@ -98,7 +104,9 @@ def main(
             corpus_name = ["train", "test"]
 
             for prompt_type in prompts:
+                # ["Baseline"]:
                 for model in models:
+                    # ["oversampling", "synonym_replacement", "synonym_replacement_dictionary"]:
                     prompt_abbr = ABBREVIATIONS_MAPPING.get(prompt_type, prompt_type)
                     model_abbr = model.replace(".", "")
                     corpus_paths.append(f"{global_root}/{CORRECTED_PATH}/{prompt_abbr}/{model_abbr}")
@@ -169,6 +177,12 @@ def main(
                 models=models,
                 output_path=f"{global_root}/results/similarity_analysis"
             )
+
+        if compare_reports_results:
+            logger.info("\n\nStarting report comparison...\n")
+
+            # Start report comparison
+            compare_reports(results_dir=f"{global_root}/results/corpus_analysis")
 
     except KeyboardInterrupt:
         logger.info("\n\nProcess interrupted by user")

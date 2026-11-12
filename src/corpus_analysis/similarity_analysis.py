@@ -9,7 +9,10 @@ the results into a Pandas DataFrame for analysis.
 """
 
 # --- Third-Party Imports ---
+import mauve
+from bisect import bisect_left
 from scipy.stats import entropy
+from collections import defaultdict
 from rouge_score import rouge_scorer
 from nltk.translate.meteor_score import meteor_score
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
@@ -31,7 +34,8 @@ from ..imports import (
     Dict,
     Optional,
     ABBREVIATIONS_MAPPING,
-    DEVICE
+    DEVICE,
+    RANDOM_SEED
 )
 
 
@@ -263,12 +267,17 @@ def calculate_ngams_cosine(
     
     # Similarity metrics
     cosine_sim = cosine_similarity(v1.reshape(1, -1), v2.reshape(1, -1))[0][0]
-    js_divergence = entropy(v1 + 1e-12, v2 + 1e-12) / 2 + entropy(v2 + 1e-12, v1 + 1e-12) / 2
     hellinger = np.sqrt(np.sum((np.sqrt(v1) - np.sqrt(v2)) ** 2)) / np.sqrt(2)
+
+    # Compute the mixture distribution M
+    m = 0.5 * (v1 + v2)
+
+    # JSD is the average KL divergence of v1 and v2 from M
+    js_divergence = 1 - (0.5 * entropy(v1 + 1e-12, m + 1e-12) + 0.5 * entropy(v2 + 1e-12, m + 1e-12))
 
     return {
         "cosine": cosine_sim,
-        "js_divergence": js_divergence,
+        "1_js_divergence": js_divergence,
         "hellinger": hellinger
     }
 
@@ -381,11 +390,239 @@ def bert_score(
     }
 
 
+def tokenize_text(text: str) -> list[str]:
+    """
+    Lowercases and tokenizes a text with the same tokenizer used by BLEU and METEOR.
+
+    Args:
+        text: Text to tokenize.
+
+    Returns:
+        List of lowercase word tokens.
+    """
+    return nltk.word_tokenize(text.lower(), language="spanish")
+
+
+def subsample_to_budget(
+    token_lists: list[list[str]],
+    budget: Optional[int],
+    seed: int = RANDOM_SEED
+) -> list[list[str]]:
+    """
+    Pick whole documents at random until `budget` tokens are reached (None = keep all).
+    
+    Args:
+        token_lists: List of lists of tokens.
+        budget: Maximum number of tokens to include (None = keep all).
+        seed: Random seed for reproducibility.
+
+    Returns:
+        List of lists of tokens, subsampled to the given budget.
+    """
+    if budget is None:
+        return token_lists
+    rng = np.random.default_rng(seed)
+    out, total = [], 0
+    for i in rng.permutation(len(token_lists)):
+        out.append(token_lists[i]); total += len(token_lists[i])
+        if total >= budget:
+            break
+    return out
+
+
+def _ngrams(tokens: list[str], n: int):
+    """Yields the n-grams (as tuples) of a token list."""
+    return zip(*(tokens[i:] for i in range(n)))
+
+
+def calculate_self_bleu(
+    texts: list[str],
+    max_n: int = 4,
+    n_samples: int = 500,
+    epsilon: float = 0.1
+) -> Dict[str, float]:
+    """
+    Calculate Self-BLEU for a list of texts.
+    
+    Self-BLEU: each document vs. ALL OTHER documents of the same corpus (lower = more diverse).
+    Uses an n-gram index with top-2 counts, so it is linear instead of quadratic.
+    Smoothing equals NLTK method1.
+    
+    Args:
+        texts: List of texts to evaluate.
+        max_n: Maximum n-gram length to consider (default is 4).
+        n_samples: Number of samples to evaluate (default is 500).
+        epsilon: Smoothing parameter (default is 0.1).
+    
+    Returns:
+        Dictionary containing Self-BLEU score and its standard deviation.
+    """
+    docs = [tokenize_text(t) for t in texts if t and t.strip()]
+    lengths = np.array([len(d) for d in docs])
+    order = np.argsort(lengths)
+    sorted_len = lengths[order]
+    sorted_len_list = sorted_len.tolist()
+
+    doc_counts = [[Counter(_ngrams(d, n)) for n in range(1, max_n + 1)] for d in docs]
+    index = [defaultdict(lambda: [0, -1, 0]) for _ in range(max_n)]   # [best, best_doc, second]
+    for di, per_n in enumerate(doc_counts):
+        for k, cnt in enumerate(per_n):
+            for g, c in cnt.items():
+                e = index[k][g]
+                if c > e[0]:
+                    e[2], e[0], e[1] = e[0], c, di
+                elif c > e[2]:
+                    e[2] = c
+    rng = np.random.default_rng(RANDOM_SEED)
+    idx = np.arange(len(docs))
+    if n_samples and n_samples < len(docs):
+        idx = rng.choice(idx, size=n_samples, replace=False)
+
+    scores = []
+    for i in idx:
+        hyp_len = len(docs[i])
+        if hyp_len == 0:
+            continue
+        logp = 0.0
+        for k in range(max_n):
+            num = den = 0
+            for g, c in doc_counts[i][k].items():
+                best, who, second = index[k][g]
+                num += min(c, second if who == i else best)
+                den += c
+            if den == 0:
+                logp = None
+                break
+            p = num / den if num > 0 else epsilon / den
+            logp += np.log(p) / max_n
+        if logp is None:
+            continue
+        pos = bisect_left(sorted_len_list, hyp_len)          # closest other-document length
+        cands = [sorted_len[j] for j in (pos - 2, pos - 1, pos, pos + 1)
+                 if 0 <= j < len(order) and order[j] != i]
+        ref_len = min(cands, key=lambda r: (abs(r - hyp_len), r))
+        bp = 1.0 if hyp_len > ref_len else np.exp(1 - ref_len / hyp_len)
+        scores.append(bp * np.exp(logp))
+    return {f"Self_BLEU_{max_n}": float(np.mean(scores)),
+            f"Self_BLEU_{max_n}_std": float(np.std(scores))}
+
+
+def calculate_lexical_distribution(
+    texts: list[str],
+    token_budget: Optional[int] = None,
+    n_repeats: int = 5,
+    zipf_max_rank: int = 1000,
+) -> Dict[str, float]:
+    """
+    Calculate lexical distribution metrics for a list of texts.
+    
+    Unigram/bigram entropy (bits), distinct-1/2/3, Zipf exponent (log-log OLS over ranks
+    1..zipf_max_rank) and share of tokens covered by the 100 most frequent word types.
+    
+    Args:
+        texts: List of texts to analyze.
+        token_budget: Maximum number of tokens to include (None = keep all).
+        n_repeats: Number of times to repeat the analysis.
+        zipf_max_rank: Maximum rank for Zipf analysis.
+
+    Returns:
+        A dictionary containing the calculated metrics.
+    """
+    tokenized = [tokenize_text(t) for t in texts if t and t.strip()]
+    reps = n_repeats if token_budget else 1
+    rows = []
+    for r in range(reps):
+        docs = subsample_to_budget(tokenized, token_budget, RANDOM_SEED + r)
+        flat = [w for d in docs for w in d]
+        uni = Counter(flat)
+        bi = Counter(g for d in docs for g in _ngrams(d, 2))
+
+        def H(cnt):
+            p = np.array(list(cnt.values()), dtype=float); p /= p.sum()
+            return float(-(p * np.log2(p)).sum())
+
+        row = {"Entropy_unigram": H(uni), "Entropy_bigram": H(bi)}
+        for n in (1, 2, 3):
+            grams = [g for d in docs for g in _ngrams(d, n)]
+            row[f"Distinct_{n}"] = len(set(grams)) / max(len(grams), 1)
+        freqs = np.array(sorted(uni.values(), reverse=True), dtype=float)
+        top = min(zipf_max_rank, len(freqs))
+        lr, lf = np.log(np.arange(1, top + 1)), np.log(freqs[:top])
+        slope, intercept = np.polyfit(lr, lf, 1)
+        pred = slope * lr + intercept
+        row["Zipf_alpha"] = float(-slope)
+        row["Zipf_R2"] = float(1 - ((lf - pred) ** 2).sum() / ((lf - lf.mean()) ** 2).sum())
+        row["Top100_mass"] = float(freqs[:100].sum() / freqs.sum())
+        row["Vocab_size"], row["Tokens"] = len(uni), len(flat)
+        rows.append(row)
+    return {k: float(np.mean([r[k] for r in rows])) for k in rows[0]}
+
+
+def chunk_text(
+    text: str,
+    max_words: int = 100
+) -> list[str]:
+    """
+    Splits a text into consecutive chunks of at most `max_words` words.
+
+    Args:
+        text: Text to split.
+        max_words: Maximum number of words per chunk.
+
+    Returns:
+        List of text chunks.
+    """
+    w = text.split()
+    return [" ".join(w[i:i + max_words]) for i in range(0, len(w), max_words)]
+
+
+def calculate_mauve(
+    reference_texts: list[str],
+    generated_texts: list[str],
+    embedder: SentenceTransformer,
+    max_samples: int = 5000,
+    max_words: int = 100,
+    seeds: tuple = (0, 1, 2, 3, 4),
+    device_id: int = 0
+) -> Dict[str, float]:
+    """
+    Calculates MAUVE (reference = p, generated = q) averaged over several seeds.
+
+    Texts are split into ~`max_words`-word chunks to get enough samples, and both
+    sample sizes are equalised.
+
+    Args:
+        reference_texts: The list of reference texts.
+        generated_texts: The list of generated texts.
+        embedder: A multilingual SentenceTransformer used to embed the chunks.
+        max_samples: Maximum number of chunks per distribution.
+        max_words: Words per chunk.
+        seeds: Seeds to average over.
+        device_id: GPU id for the clustering (-1 runs it on CPU).
+
+    Returns:
+        Dictionary with the mean MAUVE score and its standard deviation.
+    """
+    p = [c for t in reference_texts for c in chunk_text(t, max_words)]
+    q = [c for t in generated_texts for c in chunk_text(t, max_words)]
+    vals = []
+    for s in seeds:
+        rng = np.random.default_rng(RANDOM_SEED + s)
+        n = min(len(p), len(q), max_samples)
+        pi, qi = rng.choice(len(p), n, replace=False), rng.choice(len(q), n, replace=False)
+        pf = embedder.encode([p[i] for i in pi], batch_size=64, show_progress_bar=False)
+        qf = embedder.encode([q[i] for i in qi], batch_size=64, show_progress_bar=False)
+        vals.append(mauve.compute_mauve(p_features=pf, q_features=qf, seed=s,
+                                        device_id=device_id, verbose=False).mauve)
+    return {"MAUVE": float(np.mean(vals)), "MAUVE_std": float(np.std(vals))}
+
+
 def print_similarity_report(
     data_path: str,
     prompts: list[str],
     models: list[str],
-    output_path: Optional[str] = None
+    output_path: Optional[str] = None,
+    token_budget: Optional[int] = 100000
 ):
     """
     Evaluates the similarity between reference and generated texts for all files in 
@@ -396,18 +633,26 @@ def print_similarity_report(
         prompts: List of prompt methods to evaluate (e.g., ["method_1_var", "method_3_context"]).
         models: List of models to evaluate (e.g., ["llama3.2-3b", "gpt-4.1-nano"]).
         output_path: Optional path to save the resulting DataFrame as a CSV file.
+        token_budget: Optional token budget used to equalise corpora in the lexical distribution metrics.
+                      Default is 100,000 tokens, because the original corpus has ~100k tokens.
     """
     # Define paths and names for corpora to compare
     base_path = "raw/train"
     base_corpus = load_complete_corpus(data_path=os.path.join(data_path, base_path))
+    mauve_embedder = SentenceTransformer("paraphrase-multilingual-mpnet-base-v2", device=DEVICE)
 
     # Initialize models once for efficiency
     sbert_model, bert_model, bert_tokenizer, rouge_scorer_instance = initialize_similarity_models()
     general_results = pd.DataFrame([])
 
-    # Initialize lists to store reference and generated texts
-    reference_texts = []
-    generated_texts = []
+    # Corpus-level diversity metrics of the original corpus (computed once)
+    base_texts = [d["clean_text"] for d in base_corpus.values() if d.get("clean_text")]
+    original_row = {
+        "Filename": "ORIGINAL", "Model": "Original", "Method": "train",
+        **calculate_self_bleu(base_texts),
+        **calculate_lexical_distribution(base_texts, token_budget=token_budget)
+    }
+    general_results = pd.concat([general_results, pd.DataFrame([original_row])], ignore_index=True)
 
     for model in models:
         for prompt in prompts:
@@ -422,22 +667,30 @@ def print_similarity_report(
             logger.info(f"Found {len(base_corpus)} documents. Starting evaluation for model '{model}' and prompt '{prompt}'...")
             augmented_results = []
 
+            # Reference and generated texts of this model/prompt (for corpus-level metrics)
+            reference_texts = []
+            generated_texts = []
+
             # Calculate similarity metrics for each document against the corresponding generated one
-            for i, filename in enumerate(list(base_corpus.keys())[:10]):
+            for i, filename in enumerate(list(base_corpus.keys())):
                 logger.info(f"Processing {filename} ({i+1}/{len(base_corpus)})...")
 
                 # Get the clean text for both reference and generated documents
                 reference_text = base_corpus[filename]["clean_text"]
                 generated_text = augmented_corpus.get(filename, {}).get("clean_text", "")
 
-                # Append texts to the lists for n-gram cosine similarity calculation later
-                reference_texts.append(reference_text)
-                generated_texts.append(generated_text)
-
                 if not generated_text:
                     logger.warning(f"No generated text found for {filename}. Skipping metrics calculation.")
                     continue
+
+                # Append texts to the lists for corpus-level metrics calculated later
+                reference_texts.append(reference_text)
+                generated_texts.append(generated_text)
                 
+                tfidf_cos = meteor = bleu = sbert_cos = 0.0
+                rouge_scores = {"ROUGE-1": 0.0, "ROUGE-2": 0.0, "ROUGE-L": 0.0}
+                sbert_cos = bert_scores = {"precision": 0.0, "recall": 0.0, "f1_score": 0.0}
+
                 # BLEU
                 bleu = calculate_bleu(reference_text, generated_text)
                 
@@ -455,7 +708,7 @@ def print_similarity_report(
 
                 # BERTScore
                 bert_scores = bert_score(generated_text, reference_text, bert_tokenizer, bert_model)
-                
+
                 augmented_results.append({
                     "Filename": filename,
                     "Model": model,
@@ -481,8 +734,18 @@ def print_similarity_report(
 
             # Add n-gram cosine similarity results to the DataFrame (same value for all rows since it's corpus-level)
             augmented_results["Cosine_Sim_NGram"] = ngram_cosine_results["cosine"]
-            augmented_results["JS_Divergence"] = ngram_cosine_results["js_divergence"]
+            augmented_results["1-JSD"] = ngram_cosine_results["1_js_divergence"]
             augmented_results["Hellinger_Distance"] = ngram_cosine_results["hellinger"]
+
+            # Corpus-level diversity metrics (same value for all rows)
+            corpus_metrics = {
+                **calculate_self_bleu(generated_texts),
+                **calculate_lexical_distribution(generated_texts, token_budget=token_budget),
+                **calculate_mauve(reference_texts, generated_texts, mauve_embedder)
+            }
+            logger.info(f"Calculated corpus-level metrics for model '{model}' and prompt '{prompt}': {corpus_metrics}")
+            for metric_name, metric_value in corpus_metrics.items():
+                augmented_results[metric_name] = metric_value
             
             # Calculate Averages
             means = augmented_results.mean(numeric_only=True)

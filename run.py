@@ -40,7 +40,7 @@ def determine_root_path() -> str:
 # --- Entry Point ---
 if __name__ == '__main__':
     # Set the desired parameters
-    models = ["gpt-4.1-nano", "llama3.2-3b", "biomistral-7b"]  # List of models to use for generation ["llama3.2-3b", "gpt-4.1-nano", "biomistral-7b" etc.]
+    models = ["gpt-41-nano-temp-0", "gpt-41-nano-temp-06", "gpt-41-nano-temp-1", "llama3.2-3b", "biomistral-7b"]  # List of models to use for generation ["llama3.2-3b", "gpt-4.1-nano", "biomistral-7b" etc.]
     prompts = ["method_1_var", "method_2_guides_inj", "method_3_context", "method_4_full_gen"]  # List of prompts ["method_1_var", "method_2_guides_inj", "method_3_context", "method_4_full_gen"]
     
     main(
@@ -53,6 +53,7 @@ if __name__ == '__main__':
         analyze_corpus=False,
         compare_word_frequencies=False,
         similarity_analysis=False,
+        compare_reports_results=False,
         prompts=prompts,
         models=models
     )
