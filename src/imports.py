@@ -103,7 +103,7 @@ CSV_FILE = "data/experiment_cost_log.csv"
 ABBREVIATIONS_MAPPING = {
     "gpt-41-nano": "GPT-4.1",
     "gpt-41-nano-temp-0": "GPT-4.1-temp-0.0",
-    "gpt-41-nano-temp-0.6": "GPT-4.1-temp-0.6",
+    "gpt-41-nano-temp-06": "GPT-4.1-temp-0.6",
     "gpt-41-nano-temp-1": "GPT-4.1-temp-1.0",
     "biomistral-7b": "BioMistral",
     "llama3.2-3b": "Llama-3.2",
