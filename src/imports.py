@@ -101,10 +101,10 @@ CSV_FILE = "data/experiment_cost_log.csv"
 
 # Define abbreviations mapping for models and methodss
 ABBREVIATIONS_MAPPING = {
-    "gpt-4.1-nano": "GPT-4.1",
-    "gpt-4.1-nano-temp-0": "GPT-4.1-temp-0.0",
-    "gpt-4.1-nano-temp-0.6": "GPT-4.1-temp-0.6",
-    "gpt-4.1-nano-temp-1": "GPT-4.1-temp-1.0",
+    "gpt-41-nano": "GPT-4.1",
+    "gpt-41-nano-temp-0": "GPT-4.1-temp-0.0",
+    "gpt-41-nano-temp-0.6": "GPT-4.1-temp-0.6",
+    "gpt-41-nano-temp-1": "GPT-4.1-temp-1.0",
     "biomistral-7b": "BioMistral",
     "llama3.2-3b": "Llama-3.2",
     "method_1_var": "GSA#1",
